@@ -226,6 +226,14 @@ export class AuthController {
         return;
       }
 
+      if (companyNumber !== undefined && companyNumber.trim() !== '' && companyNumber !== user.companyNumber) {
+        const existingCompany = await User.findOne({ companyNumber: companyNumber.trim(), _id: { $ne: user._id } });
+        if (existingCompany) {
+          res.status(400).json({ success: false, message: 'Company ID is already in use by another organization.' });
+          return;
+        }
+      }
+
       if (fullName) user.fullName = fullName;
       if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
       if (companyName !== undefined) user.companyName = companyName;

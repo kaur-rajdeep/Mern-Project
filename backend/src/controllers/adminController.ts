@@ -97,6 +97,14 @@ export class AdminController {
         return;
       }
 
+      if (companyNumber && companyNumber.trim() !== '') {
+        const existingCompany = await User.findOne({ companyNumber: companyNumber.trim() });
+        if (existingCompany) {
+          res.status(400).json({ success: false, message: 'Company ID is already in use by another organization.' });
+          return;
+        }
+      }
+
       const rawPassword = password || crypto.randomBytes(3).toString('hex');
       const passwordHash = await bcrypt.hash(rawPassword, 10);
       const legacyMd5 = crypto.createHash('md5').update(rawPassword).digest('hex');
@@ -139,6 +147,14 @@ export class AdminController {
       if (!user) {
         res.status(404).json({ success: false, message: 'Customer not found.' });
         return;
+      }
+
+      if (companyNumber !== undefined && companyNumber.trim() !== '' && companyNumber !== user.companyNumber) {
+        const existingCompany = await User.findOne({ companyNumber: companyNumber.trim(), _id: { $ne: user._id } });
+        if (existingCompany) {
+          res.status(400).json({ success: false, message: 'Company ID is already in use by another organization.' });
+          return;
+        }
       }
 
       if (fullName) user.fullName = fullName;
