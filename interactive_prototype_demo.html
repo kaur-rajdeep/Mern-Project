@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panacea Infosec MERN Portal — End-to-End Application Walkthrough</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            panacea: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          },
+          boxShadow: {
+            '2xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+            'xs': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+            'window': '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0f172a;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .stepper-chip {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stepper-chip.active {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+    .pulse-glow {
+      animation: pulseGlowAnim 2s infinite;
+    }
+    @keyframes pulseGlowAnim {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.6); }
+      50% { box-shadow: 0 0 0 8px rgba(14, 165, 233, 0); }
+    }
+    .browser-frame {
+      min-height: calc(100vh - 120px);
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-slate-950 text-slate-100 select-none">
+
+  <!-- ========================================================================= -->
+  <!-- 1. TOP PRESENTATION CONTROLLER & STEPPER BAR -->
+  <!-- ========================================================================= -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex flex-col lg:flex-row items-center justify-between gap-3 shrink-0 z-50">
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500 text-white font-black text-xs pulse-glow">
+          🛡️
+        </span>
+        <div>
+          <span class="text-xs font-black text-white uppercase tracking-tight">Panacea MERN Portal</span>
+          <span class="text-[10px] text-sky-400 font-bold block leading-none">Interactive Click-Thru Walkthrough</span>
+        </div>
+      </div>
+      <div class="h-5 w-px bg-slate-700 hidden sm:block"></div>
+      <div class="text-xs text-slate-300">
+        <span class="font-bold text-sky-400" id="tour-counter">Step 1 of 10:</span>
+        <span class="text-white ml-1 font-semibold" id="tour-desc">User Authentication & Role-Based Entry</span>
+      </div>
+    </div>
+
+    <!-- 10 Step Selector Pills -->
+    <div class="flex items-center space-x-1.5 overflow-x-auto max-w-full pb-1 lg:pb-0 custom-scrollbar">
+      <button onclick="goToScreen(1)" class="stepper-chip active px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-1">1. Login</button>
+      <button onclick="goToScreen(2)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-2">2. Auditors</button>
+      <button onclick="goToScreen(3)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-3">3. Customers</button>
+      <button onclick="goToScreen(4)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-4">4. Map Scope</button>
+      <button onclick="goToScreen(5)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-5">5. Evidence Tracker</button>
+      <button onclick="goToScreen(6)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-6">6. Consultant</button>
+      <button onclick="goToScreen(7)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-7">7. QSA Matrix</button>
+      <button onclick="goToScreen(8)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-8">8. QA Sign-Off</button>
+      <button onclick="goToScreen(9)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-9">9. Admin ROC/AOC</button>
+      <button onclick="goToScreen(10)" class="stepper-chip px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap" id="step-10">10. AOC & Export</button>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="flex items-center space-x-2 shrink-0">
+      <button onclick="prevScreen()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition flex items-center space-x-1">
+        <span>← Prev</span>
+      </button>
+      <button onclick="nextScreen()" class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition flex items-center space-x-1 shadow-xs">
+        <span id="next-btn-text">Next Step</span>
+        <span>→</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Toast Notification Area (Matches Sonner from React App) -->
+  <div id="toast-container" class="fixed top-16 right-8 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. SIMULATED BROWSER WINDOW FRAME -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 p-3 sm:p-5 overflow-hidden flex flex-col justify-center">
+    <div class="w-full max-w-7xl mx-auto h-full flex flex-col bg-slate-900 border border-slate-700/80 rounded-2xl shadow-window overflow-hidden">
+      
+      <!-- Browser Title & Address Bar -->
+      <div class="bg-slate-800/90 px-4 py-2 border-b border-slate-700 flex items-center justify-between gap-3 shrink-0">
+        <!-- Traffic light dots -->
+        <div class="flex items-center space-x-2">
+          <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+          <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+          <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+          <span class="text-xs text-slate-400 font-medium pl-2 hidden sm:inline" id="browser-tab-title">Panacea Infosec Portal</span>
+        </div>
+
+        <!-- URL Address Bar -->
+        <div class="flex-1 max-w-xl mx-auto bg-slate-950/80 border border-slate-700/70 rounded-lg px-3 py-1 flex items-center space-x-2 text-xs font-mono text-slate-300">
+          <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          <span class="text-sky-400">http://localhost:5173</span><span class="text-slate-200" id="browser-url-path">/login</span>
+        </div>
+
+        <!-- Right actions -->
+        <div class="flex items-center space-x-2 text-xs text-slate-400">
+          <span class="hidden md:inline text-[11px] text-slate-400">React 18 + Tailwind MERN Client</span>
+        </div>
+      </div>
+
+      <!-- Application Screen Viewport Canvas -->
+      <div class="flex-1 bg-slate-50 text-slate-800 overflow-y-auto custom-scrollbar relative" id="viewport-canvas">
+        <!-- Screens Rendered Dynamically via JS -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. MODAL CONTAINER -->
+  <!-- ========================================================================= -->
+  <div id="modal-container" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden" id="modal-content-box">
+      <!-- Modal HTML Populated via JS -->
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 4. JAVASCRIPT SIMULATION LOGIC -->
+  <!-- ========================================================================= -->
+  <script>
+    let activeScreen = 1;
+    const totalScreens = 10;
+    let selectedFilter = 'all';
+    let expandedQuestions = { '1.1': true };
+
+    // Dynamic State Store
+    let state = {
+      assessors: [
+        { id: 'ass-1', name: 'Alex Sterling', email: 'alex.qsa@panaceainfosec.com', phone: '+1 555-0192', type: 2, roleName: 'QSA Assessor', badgeClass: 'bg-teal-50 text-teal-700 border-teal-200' },
+        { id: 'ass-2', name: 'Sarah Jenkins', email: 'sarah.qa@panaceainfosec.com', phone: '+1 555-0144', type: 3, roleName: 'QA Auditor', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+        { id: 'ass-3', name: 'Michael Chang', email: 'michael.cons@panaceainfosec.com', phone: '+1 555-0188', type: 4, roleName: 'Compliance Consultant', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200' }
+      ],
+      customers: [
+        { id: 'cust-1', name: 'Acme Financial Services, Inc.', pocName: 'David Miller', pocEmail: 'david.poc@acmefin.com', phone: '+1 555-0120', process: 'Cardholder Data Environment (CDE)', status: 'Active' }
+      ],
+      projects: [
+        {
+          id: 'proj-1',
+          serviceName: 'PCI-DSS 4.0 Compliance',
+          customerName: 'Acme Financial Services, Inc.',
+          processName: 'Cardholder Data Environment (CDE)',
+          qsaName: 'Alex Sterling',
+          qaName: 'Sarah Jenkins',
+          consultantName: 'Michael Chang',
+          startDate: '2026-09-01',
+          endDate: '2026-09-30',
+          status: 'In Progress',
+          progress: 88
+        }
+      ],
+      requirements: [
+        {
+          id: '1.1',
+          code: 'Req 1.1',
+          title: 'Requirement 1.1: Firewall Configuration Standards',
+          desc: 'Establish and implement firewall and router configuration standards that document business justification for all permitted protocols, services, and ports.',
+          guidance: 'Verify that formal firewall change procedures are documented and approved by security leadership.',
+          filterCategory: 'qa_approved',
+          evidenceFiles: [
+            { id: 'doc-1', name: 'firewall_policy_standard_v2.1.pdf', size: '1.4 MB', uploadedBy: 'David Miller (Customer)', uploadDate: 'Sep 09, 2026 10:14 AM' },
+            { id: 'doc-2', name: 'dmz_inbound_justification_matrix.xlsx', size: '540 KB', uploadedBy: 'David Miller (Customer)', uploadDate: 'Sep 09, 2026 11:30 AM' }
+          ],
+          workingPapers: [
+            { id: 'wp-1', name: 'qsa_sampling_check_fw.docx', size: '320 KB', author: 'Alex Sterling (Lead QSA)', date: 'Sep 10, 2026 03:15 PM' }
+          ],
+          consultantNote: 'Firewall standard compliant. Ensure DMZ inbound rule justifications are re-reviewed quarterly.',
+          allStatus: 4,
+          badge: 'QA Approved',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        },
+        {
+          id: '1.2',
+          code: 'Req 1.2',
+          title: 'Requirement 1.2: Rule Set Configuration & Anti-Spoofing',
+          desc: 'Build firewall and router configurations that restrict connections between untrusted networks and cardholder data environments (CDE).',
+          guidance: 'Inspect network topology diagrams and verify inbound/outbound rule filters on perimeter firewalls.',
+          filterCategory: 'qa_approved',
+          evidenceFiles: [
+            { id: 'doc-3', name: 'palo_alto_cde_ruleset_v4.2.pdf', size: '2.1 MB', uploadedBy: 'David Miller (Customer)', uploadDate: 'Sep 09, 2026 02:45 PM' }
+          ],
+          workingPapers: [
+            { id: 'wp-2', name: 'port_scan_verification.log', size: '180 KB', author: 'Alex Sterling (Lead QSA)', date: 'Sep 10, 2026 04:00 PM' }
+          ],
+          consultantNote: 'Pre-audit check passed. DMZ rule matrix verified.',
+          allStatus: 4,
+          badge: 'QA Approved',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        },
+        {
+          id: '3.4',
+          code: 'Req 3.4',
+          title: 'Requirement 3.4: PAN Cryptographic Storage & Key Rotation',
+          desc: 'Render PAN unreadable anywhere it is stored using strong cryptography with associated key-management processes.',
+          guidance: 'Audit KMS policies, AES-256 GCM configuration, and HSM partition access logs.',
+          filterCategory: 'qa_approved',
+          evidenceFiles: [
+            { id: 'doc-4', name: 'aes256_hsm_kms_architecture.pdf', size: '3.8 MB', uploadedBy: 'David Miller (Customer)', uploadDate: 'Sep 08, 2026 09:20 AM' }
+          ],
+          workingPapers: [
+            { id: 'wp-3', name: 'kms_key_rotation_test.pdf', size: '920 KB', author: 'Alex Sterling (Lead QSA)', date: 'Sep 10, 2026 01:10 PM' }
+          ],
+          consultantNote: 'Hardware Security Module key rotation logs validated.',
+          allStatus: 4,
+          badge: 'QA Approved',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        }
+      ],
+      comments: [
+        { id: 'c-1', user: 'David Miller', role: 'Customer', roleBadge: 'bg-sky-50 text-sky-700', text: 'Uploaded the latest Palo Alto export ruleset (file: palo_alto_cde_ruleset_v4.2.pdf).', time: 'Sep 09, 2:48 PM' },
+        { id: 'c-2', user: 'Michael Chang', role: 'Consultant', roleBadge: 'bg-amber-50 text-amber-700', text: 'Pre-audit check passed. The rule justifications match PCI DSS 4.0 standards.', time: 'Sep 09, 3:30 PM' },
+        { id: 'c-3', user: 'Alex Sterling', role: 'Lead QSA', roleBadge: 'bg-teal-50 text-teal-700', text: 'Inspected the DMZ inbound rules. Attached port_scan_verification.log working paper and routed to QA.', time: 'Sep 10, 4:05 PM' },
+        { id: 'c-4', user: 'Sarah Jenkins', role: 'QA Auditor', roleBadge: 'bg-indigo-50 text-indigo-700', text: 'Quality Assurance check validated. Both customer files and QSA papers meet standards. Approved!', time: 'Sep 10, 5:12 PM' }
+      ],
+      uploadedRoc: false,
+      uploadedAoc: false
+    };
+
+    // Metadata per Screen
+    const screenMeta = [
+      { id: 1, title: "User Authentication & Role-Based Entry", url: "/login", tabTitle: "Login — Panacea Infosec" },
+      { id: 2, title: "Super Admin — Auditors Management", url: "/admin/assessors", tabTitle: "Auditors Management — Panacea Admin" },
+      { id: 3, title: "Super Admin — Customer Organizations Management", url: "/admin/customers", tabTitle: "Customers Management — Panacea Admin" },
+      { id: 4, title: "Super Admin — 5-Party Compliance Scope Mapping", url: "/admin/compliances", tabTitle: "Compliance Projects — Panacea Admin" },
+      { id: 5, title: "Customer POC — Evidence Audit View & Evidence Tracker", url: "/customer/evidence/audit-view?processId=cde&serviceId=1", tabTitle: "Evidence Audit Matrix — Customer Portal" },
+      { id: 6, title: "Advisory Consultant — Pre-Audit Gap Review", url: "/consultant/dashboard", tabTitle: "Client Engagements — Consultant Portal" },
+      { id: 7, title: "Lead QSA — Security Assessment Matrix & Workpapers", url: "/qsa/audit", tabTitle: "Assigned Audits — QSA Portal" },
+      { id: 8, title: "QA Auditor — Independent Review & Batch Sign-Off", url: "/qa/audit", tabTitle: "QA Verification Console — Panacea QA" },
+      { id: 9, title: "Super Admin — Milestone Finalization & ROC/AOC Publishing", url: "/admin/compliances/proj-1", tabTitle: "Compliance Audit View — Panacea Admin" },
+      { id: 10, title: "Customer POC — Attestation of Compliance (AOC) & ZIP Export", url: "/customer/reports", tabTitle: "Attestation Reports & Export — Customer Portal" }
+    ];
+
+    function goToScreen(screenNum) {
+      if (screenNum < 1 || screenNum > totalScreens) return;
+      activeScreen = screenNum;
+
+      document.querySelectorAll('.stepper-chip').forEach((chip, idx) => {
+        chip.classList.toggle('active', idx + 1 === screenNum);
+      });
+
+      const meta = screenMeta[screenNum - 1];
+      document.getElementById('tour-counter').innerText = `Step ${screenNum} of ${totalScreens}:`;
+      document.getElementById('tour-desc').innerText = meta.title;
+      document.getElementById('browser-url-path').innerText = meta.url;
+      document.getElementById('browser-tab-title').innerText = meta.tabTitle;
+
+      document.getElementById('next-btn-text').innerText = (screenNum === totalScreens) ? "Restart Tour 🔄" : "Next Step";
+
+      renderScreen(screenNum);
+      document.getElementById('viewport-canvas').scrollTop = 0;
+    }
+
+    function nextScreen() {
+      if (activeScreen === totalScreens) {
+        goToScreen(1);
+      } else {
+        goToScreen(activeScreen + 1);
+      }
+    }
+
+    function prevScreen() {
+      if (activeScreen > 1) {
+        goToScreen(activeScreen - 1);
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let iconColor = 'text-emerald-600 bg-emerald-50';
+      let iconSvg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+
+      if (type === 'info') {
+        iconColor = 'text-sky-600 bg-sky-50';
+        iconSvg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      } else if (type === 'warning') {
+        iconColor = 'text-amber-600 bg-amber-50';
+        iconSvg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+      }
+
+      toast.className = `pointer-events-auto bg-white border border-slate-200 shadow-xl rounded-xl p-3.5 flex items-center space-x-3 text-xs font-semibold text-slate-800 transition-all duration-300 transform translate-y-2 opacity-0`;
+      toast.innerHTML = `
+        <div class="w-6 h-6 rounded-lg ${iconColor} flex items-center justify-center shrink-0">
+          ${iconSvg}
+        </div>
+        <div>${message}</div>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-4');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function toggleQuestion(id) {
+      expandedQuestions[id] = !expandedQuestions[id];
+      renderScreen(activeScreen);
+    }
+
+    function setFilter(key) {
+      selectedFilter = key;
+      renderScreen(activeScreen);
+    }
+
+    // Helper: Top App Navbar (Matches Navbar.tsx)
+    function renderAppNavbar(userName, roleTitle, avatarLetter, avatarColorClass) {
+      return `
+        <header class="sticky top-0 z-30 bg-white border-b border-slate-200 text-slate-800 shrink-0">
+          <div class="px-4 lg:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-3 group cursor-pointer" onclick="goToScreen(1)">
+                <div class="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 shadow-2xs transition">
+                  <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <div>
+                  <h1 class="text-sm font-bold tracking-tight text-slate-900">
+                    PANACEA <span class="text-sky-600">INFOSEC</span>
+                  </h1>
+                  <p class="text-[10px] text-slate-500 leading-none font-medium">Compliance & Security Assessment Portal</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-2.5 px-3 py-1.5 rounded-lg bg-sky-50/60 border border-sky-100">
+                <div class="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold ${avatarColorClass}">
+                  ${avatarLetter}
+                </div>
+                <div class="text-left">
+                  <p class="text-xs font-semibold text-slate-900 leading-tight">${userName}</p>
+                  <p class="text-[10px] text-sky-700 font-medium">${roleTitle}</p>
+                </div>
+              </div>
+
+              <div onclick="goToScreen(1)" class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer" title="Sign Out">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+              </div>
+            </div>
+          </div>
+        </header>
+      `;
+    }
+
+    // Helper: App Sidebar (Matches Sidebar.tsx)
+    function renderAppSidebar(role, activeNav) {
+      const linkClass = (isActive) => 
+        `flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs transition cursor-pointer ${
+          isActive 
+            ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
+            : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/60 font-medium'
+        }`;
+
+      let linksHtml = '';
+      if (role === 'admin') {
+        linksHtml = `
+          <div class="space-y-1">
+            <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Administration</p>
+            <a onclick="goToScreen(4)" class="${linkClass(activeNav === 'dashboard')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+              <span>Dashboard Overview</span>
+            </a>
+            <a onclick="goToScreen(3)" class="${linkClass(activeNav === 'customers')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+              <span>Customers Management</span>
+            </a>
+            <a onclick="goToScreen(2)" class="${linkClass(activeNav === 'assessors')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+              <span>Auditors (QSA / QA / Cons)</span>
+            </a>
+
+            <p class="px-3 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Frameworks & Projects</p>
+            <a onclick="goToScreen(4)" class="${linkClass(activeNav === 'compliances')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <span>Compliance Projects</span>
+            </a>
+            <a class="${linkClass(false)}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+              <span>Questionnaires / Controls</span>
+            </a>
+          </div>
+        `;
+      } else if (role === 'customer') {
+        linksHtml = `
+          <div class="space-y-1">
+            <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Customer Workspace</p>
+            <a onclick="goToScreen(5)" class="${linkClass(activeNav === 'dashboard')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+              <span>My Audit Processes</span>
+            </a>
+            <a onclick="goToScreen(10)" class="${linkClass(activeNav === 'reports')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>
+              <span>Attestations & Reports</span>
+            </a>
+          </div>
+        `;
+      } else if (role === 'qsa') {
+        linksHtml = `
+          <div class="space-y-1">
+            <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">QSA Assessment Portal</p>
+            <a onclick="goToScreen(7)" class="${linkClass(activeNav === 'dashboard')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+              <span>Assigned Audits</span>
+            </a>
+          </div>
+        `;
+      } else if (role === 'qa') {
+        linksHtml = `
+          <div class="space-y-1">
+            <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Quality Assurance Portal</p>
+            <a onclick="goToScreen(8)" class="${linkClass(activeNav === 'dashboard')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+              <span>QA Review Engagements</span>
+            </a>
+          </div>
+        `;
+      } else if (role === 'consultant') {
+        linksHtml = `
+          <div class="space-y-1">
+            <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">Consultant Portal</p>
+            <a onclick="goToScreen(6)" class="${linkClass(activeNav === 'dashboard')}">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+              <span>Client Consultations</span>
+            </a>
+          </div>
+        `;
+      }
+
+      return `
+        <aside class="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col justify-between py-5 px-3 overflow-y-auto custom-scrollbar">
+          <div class="space-y-6">${linksHtml}</div>
+          <div class="pt-4 border-t border-slate-100">
+            <a class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs text-slate-600 hover:text-sky-600 hover:bg-sky-50/60 font-medium transition cursor-pointer">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <span>Profile & Password</span>
+            </a>
+          </div>
+        </aside>
+      `;
+    }
+
+    // Helper: Filter Tabs HTML (Matches EvidenceAuditView.tsx)
+    function renderFilterTabs() {
+      const allCount = state.requirements.length;
+      const pendingCount = state.requirements.filter(r => r.filterCategory === 'pending').length;
+      const qsaApprovedCount = state.requirements.filter(r => r.filterCategory === 'qsa_approved').length;
+      const qaApprovedCount = state.requirements.filter(r => r.filterCategory === 'qa_approved').length;
+      const modCount = state.requirements.filter(r => r.filterCategory === 'mod_requested').length;
+      const inProgCount = state.requirements.filter(r => r.filterCategory === 'in_progress').length;
+      const disCount = state.requirements.filter(r => r.filterCategory === 'disapproved').length;
+
+      const tabs = [
+        { key: 'all', label: 'All Controls', count: allCount },
+        { key: 'pending', label: 'Pending Submission', count: pendingCount },
+        { key: 'qsa_approved', label: 'QSA Approved', count: qsaApprovedCount },
+        { key: 'qa_approved', label: 'QA Approved', count: qaApprovedCount },
+        { key: 'mod_requested', label: 'Modification Requested', count: modCount },
+        { key: 'in_progress', label: 'In Progress', count: inProgCount },
+        { key: 'disapproved', label: 'Disapproved / Incomplete', count: disCount },
+      ];
+
+      return `
+        <div class="flex flex-wrap gap-2 mb-6">
+          ${tabs.map(t => {
+            const isActive = selectedFilter === t.key;
+            return `
+              <button onclick="setFilter('${t.key}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 ${
+                isActive 
+                  ? 'bg-sky-600 text-white font-bold shadow-xs' 
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }">
+                <span>${t.label}</span>
+                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                  isActive ? 'bg-sky-700/80 text-white' : 'bg-slate-100 text-slate-500'
+                }">${t.count}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // MAIN SCREEN RENDER FUNCTION
+    // =========================================================================
+    function renderScreen(screenNum) {
+      const canvas = document.getElementById('viewport-canvas');
+
+      // -----------------------------------------------------------------------
+      // SCREEN 1: Real Login Screen (Matches LoginPage.tsx exactly)
+      // -----------------------------------------------------------------------
+      if (screenNum === 1) {
+        canvas.innerHTML = `
+          <div class="min-h-full bg-slate-50 flex items-center justify-center p-6 sm:p-12">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-6">
+              
+              <!-- Brand Header -->
+              <div class="text-center space-y-2 mb-8">
+                <div class="inline-flex p-3 rounded-2xl bg-sky-50 border border-sky-200 text-sky-600 mb-2 shadow-2xs">
+                  <svg class="w-8 h-8 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-black tracking-tight text-slate-900">
+                  PANACEA <span class="text-sky-600">INFOSEC</span>
+                </h2>
+                <p class="text-xs text-slate-500 font-medium">Compliance & Cybersecurity Assessment Portal</p>
+              </div>
+
+              <!-- Login Form -->
+              <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Email Address
+                  </label>
+                  <div class="relative">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <input
+                      type="email"
+                      id="login-email"
+                      required
+                      value="admin@panaceainfosec.com"
+                      placeholder="user@example.com"
+                      class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition text-slate-900 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Password
+                    </label>
+                    <a onclick="showToast('Password reset link sent to registered email', 'info')" class="text-xs text-sky-600 hover:text-sky-700 font-semibold underline underline-offset-2 cursor-pointer">
+                      Forgot password?
+                    </a>
+                  </div>
+                  <div class="relative">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <input
+                      type="password"
+                      id="login-password"
+                      required
+                      value="••••••••••••"
+                      placeholder="••••••••"
+                      class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition text-slate-900 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center space-x-2"
+                >
+                  <span>Sign In to Portal</span>
+                  <span>→</span>
+                </button>
+              </form>
+
+              <div class="pt-4 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-400 font-medium">Panacea Infosec Secure Compliance Portal © 2026</p>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 2: Admin Panel -> Auditors Management (AssessorsManagement.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 2) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Super Administrator', 'Super Administrator', 'A', 'bg-purple-100 text-purple-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('admin', 'assessors')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Security Assessors & Consultants</h2>
+                      <p class="text-sm text-slate-500 font-medium">Manage QSA Assessors, QA Quality Reviewers, and Advisory Consultants.</p>
+                    </div>
+                    <button onclick="openCreateAssessorModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                      <span>Register Assessor</span>
+                    </button>
+                  </div>
+
+                  <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                          <th class="py-3 px-4">Auditor Name</th>
+                          <th class="py-3 px-4">Assigned Role</th>
+                          <th class="py-3 px-4">Contact Email</th>
+                          <th class="py-3 px-4">Phone</th>
+                          <th class="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 text-xs">
+                        ${state.assessors.map(a => `
+                          <tr class="hover:bg-slate-50/60 transition">
+                            <td class="py-3.5 px-4 font-bold text-slate-900 flex items-center space-x-2.5">
+                              <div class="w-7 h-7 rounded-lg ${a.badgeClass} flex items-center justify-center font-bold">
+                                ${a.name.charAt(0)}
+                              </div>
+                              <span>${a.name}</span>
+                            </td>
+                            <td class="py-3.5 px-4">
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${a.badgeClass}">
+                                ${a.roleName}
+                              </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-600 font-mono text-[11px]">${a.email}</td>
+                            <td class="py-3.5 px-4 text-slate-600">${a.phone}</td>
+                            <td class="py-3.5 px-4 text-right">
+                              <button onclick="showToast('Viewing assignment matrix for ${a.name}', 'info')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition">
+                                View Projects
+                              </button>
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">👥</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-sky-900">Auditors Configured</h4>
+                        <p class="text-[11px] text-sky-700">Lead QSA Alex Sterling, QA Reviewer Sarah Jenkins, and Consultant Michael Chang are provisioned.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(3)" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Proceed to Step 3: Register Customer Organization →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 3: Admin Panel -> Customers Management (CustomersManagement.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 3) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Super Administrator', 'Super Administrator', 'A', 'bg-purple-100 text-purple-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('admin', 'customers')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Customer Organizations</h2>
+                      <p class="text-sm text-slate-500 font-medium">Register client entities, define process scopes, and set primary points of contact (POCs).</p>
+                    </div>
+                    <button onclick="openCreateCustomerModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                      <span>Register Organization</span>
+                    </button>
+                  </div>
+
+                  <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                          <th class="py-3 px-4">Company Name</th>
+                          <th class="py-3 px-4">Primary POC</th>
+                          <th class="py-3 px-4">POC Email</th>
+                          <th class="py-3 px-4">Process Scope</th>
+                          <th class="py-3 px-4">Status</th>
+                          <th class="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 text-xs">
+                        ${state.customers.map(c => `
+                          <tr class="hover:bg-slate-50/60 transition">
+                            <td class="py-3.5 px-4 font-bold text-slate-900 flex items-center space-x-2.5">
+                              <div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 flex items-center justify-center font-bold">
+                                🏢
+                              </div>
+                              <span>${c.name}</span>
+                            </td>
+                            <td class="py-3.5 px-4 font-semibold text-slate-800">${c.pocName}</td>
+                            <td class="py-3.5 px-4 text-slate-600 font-mono text-[11px]">${c.pocEmail}</td>
+                            <td class="py-3.5 px-4">
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                ${c.process}
+                              </span>
+                            </td>
+                            <td class="py-3.5 px-4">
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                ● ${c.status}
+                              </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-right">
+                              <button onclick="showToast('Viewing processes for ${c.name}', 'info')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition">
+                                View Scopes
+                              </button>
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">🏢</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-sky-900">Customer Registered</h4>
+                        <p class="text-[11px] text-sky-700">Client POC David Miller (<span class="font-mono">david.poc@acmefin.com</span>) is created with scope 'Cardholder Data Environment (CDE)'.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(4)" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Proceed to Step 4: Map 5-Party Compliance Scope →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 4: Admin Panel -> 5-Party Compliance Mapping (ComplianceProjects.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 4) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Super Administrator', 'Super Administrator', 'A', 'bg-purple-100 text-purple-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('admin', 'compliances')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">5-Party Compliance Engagements</h2>
+                      <p class="text-sm text-slate-500 font-medium">Map compliance standards (PCI-DSS, ISO, HIPAA) to Customer, QSA Assessor, QA Auditor, and Consultant.</p>
+                    </div>
+                    <button onclick="openCreateProjectModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                      <span>Map Compliance Project</span>
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${state.projects.map(p => `
+                      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 flex flex-col justify-between hover:shadow-md transition">
+                        <div>
+                          <div class="flex items-center justify-between mb-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                              ${p.serviceName}
+                            </span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              ${p.status}
+                            </span>
+                          </div>
+
+                          <h3 class="font-bold text-slate-900 text-base mb-1">${p.customerName}</h3>
+                          <p class="text-xs text-slate-500 font-medium mb-4">Process Scope: <span class="text-slate-800 font-semibold">${p.processName}</span></p>
+
+                          <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-2 mb-4 text-xs">
+                            <div class="flex items-center justify-between">
+                              <span class="text-slate-500">Lead QSA:</span>
+                              <span class="font-semibold text-teal-700">🛡️ ${p.qsaName}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                              <span class="text-slate-500">QA Auditor:</span>
+                              <span class="font-semibold text-indigo-700">🔍 ${p.qaName}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                              <span class="text-slate-500">Advisory Consultant:</span>
+                              <span class="font-semibold text-amber-700">💡 ${p.consultantName}</span>
+                            </div>
+                          </div>
+
+                          <div class="space-y-1 mb-4">
+                            <div class="flex justify-between text-[11px] font-bold">
+                              <span class="text-slate-600">Audit Progress</span>
+                              <span class="text-sky-600">${p.progress}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                              <div class="bg-sky-600 h-2 rounded-full" style="width: ${p.progress}%"></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                          <span class="text-[11px] text-slate-400">Target End: <strong class="text-slate-700">${p.endDate}</strong></span>
+                          <button onclick="goToScreen(5)" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold rounded-lg text-xs transition flex items-center space-x-1">
+                            <span>Open Workspace</span>
+                            <span>→</span>
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">🔗</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-sky-900">Project Provisioned</h4>
+                        <p class="text-[11px] text-sky-700">All 5 roles are mapped. Next, let's log in as Customer POC (David Miller) to explore the Evidence Tracker & submit files.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(5)" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Login as Customer POC (David) →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 5: Customer POC Evidence Workspace & Evidence Tracker (EvidenceAuditView.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 5) {
+        let filteredReqs = state.requirements;
+        if (selectedFilter !== 'all') {
+          filteredReqs = state.requirements.filter(r => r.filterCategory === selectedFilter);
+        }
+
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('David Miller (Acme Financial)', 'Customer Organization', 'D', 'bg-sky-100 text-sky-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('customer', 'dashboard')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  
+                  <!-- Customer Header -->
+                  <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200">PCI-DSS 4.0</span>
+                        <span class="text-xs text-slate-400 font-semibold">• Customer Evidence Workspace</span>
+                      </div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Cardholder Data Environment (CDE)</h2>
+                      <p class="text-xs text-slate-500 font-medium mt-1">
+                        Lead QSA: <strong class="text-teal-700">Alex Sterling</strong> | QA: <strong class="text-indigo-700">Sarah Jenkins</strong> | Consultant: <strong class="text-amber-700">Michael Chang</strong>
+                      </p>
+                    </div>
+                    <button onclick="openEvidenceExportModal()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                      <span>Evidence Export (ZIP)</span>
+                    </button>
+                  </div>
+
+                  <!-- 7 Status Filter Tabs (Exact match of EvidenceAuditView) -->
+                  ${renderFilterTabs()}
+
+                  <!-- Control Questionnaires with Evidence Tracker Vault -->
+                  <div class="space-y-4">
+                    ${filteredReqs.map(r => {
+                      const isExpanded = !!expandedQuestions[r.id];
+                      return `
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden transition-all duration-200">
+                          <div class="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/60 transition" onclick="toggleQuestion('${r.id}')">
+                            <div class="flex items-center space-x-3">
+                              <span class="font-mono font-bold text-xs text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-100">${r.code}</span>
+                              <div>
+                                <h4 class="font-bold text-slate-900 text-sm">${r.title}</h4>
+                                <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">${r.desc}</p>
+                              </div>
+                            </div>
+                            <div class="flex items-center space-x-3 shrink-0">
+                              <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${r.badgeClass}">
+                                ${r.badge}
+                              </span>
+                              <div class="p-1 rounded-lg text-slate-400">
+                                <svg class="w-4 h-4 transform transition ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                              </div>
+                            </div>
+                          </div>
+
+                          ${isExpanded ? `
+                            <div class="p-6 bg-slate-50/50 border-t border-slate-100 space-y-6">
+                              <div class="bg-sky-50/60 border border-sky-100 rounded-xl p-3.5 text-xs text-slate-700">
+                                <span class="font-bold text-sky-900 uppercase text-[10px] tracking-wider block mb-0.5">Control Objective & Audit Guidance:</span>
+                                ${r.guidance}
+                              </div>
+
+                              <!-- 🗂️ EVIDENCE TRACKER VAULT -->
+                              <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                  <h5 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                    <span>📁</span>
+                                    <span>Evidence Tracker (${r.evidenceFiles.length} files attached)</span>
+                                  </h5>
+                                  <span class="text-[11px] text-slate-400">Immutable Cryptographic Vault</span>
+                                </div>
+
+                                <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-2xs">
+                                  ${r.evidenceFiles.map(doc => `
+                                    <div class="p-3.5 flex items-center justify-between hover:bg-slate-50 transition">
+                                      <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-sm">
+                                          📄
+                                        </div>
+                                        <div>
+                                          <div class="font-mono font-bold text-xs text-slate-800">${doc.name}</div>
+                                          <div class="text-[10px] text-slate-400 mt-0.5">Size: ${doc.size} • Uploaded by <strong class="text-slate-600">${doc.uploadedBy}</strong> on ${doc.uploadDate}</div>
+                                        </div>
+                                      </div>
+                                      <div class="flex items-center space-x-2">
+                                        <button onclick="showToast('Downloading ${doc.name}...', 'info')" class="px-2.5 py-1 bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-700 font-semibold rounded-lg text-xs transition border border-slate-200">
+                                          Download
+                                        </button>
+                                      </div>
+                                    </div>
+                                  `).join('')}
+                                </div>
+                              </div>
+
+                              <!-- 📤 UPLOAD EVIDENCE DROPZONE -->
+                              <div class="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                                <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">Submit New Evidence File</label>
+                                <div onclick="showToast('new_firewall_policy_doc.pdf attached', 'info')" class="border-2 border-dashed border-slate-200 hover:border-sky-400 rounded-xl p-4 text-center bg-slate-50/50 hover:bg-sky-50/30 cursor-pointer transition">
+                                  <span class="text-xl block mb-1">☁️</span>
+                                  <span class="text-xs font-semibold text-slate-700">Click to browse or drop compliance artifacts (PDF, DOCX, XLSX, PNG, ZIP)</span>
+                                  <span class="text-[10px] text-slate-400 block mt-0.5">Encrypted Multer storage up to 25MB</span>
+                                </div>
+                                <div class="flex gap-2">
+                                  <input type="text" id="evidence-note-${r.id}" placeholder="Add implementation remarks for assessor..." class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                  <button onclick="handleEvidenceSubmit('${r.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs shadow-xs transition shrink-0">
+                                    Submit Evidence
+                                  </button>
+                                </div>
+                              </div>
+
+                              <!-- 💬 LIVE THREADED COMMENTS -->
+                              <div class="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                                <h6 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                                  <span>💬</span>
+                                  <span>Audit Discussion & Clarifications</span>
+                                </h6>
+                                <div class="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                                  ${state.comments.map(c => `
+                                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                                      <div class="flex justify-between items-center">
+                                        <div class="flex items-center space-x-2">
+                                          <span class="font-bold text-slate-900">${c.user}</span>
+                                          <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${c.roleBadge}">${c.role}</span>
+                                        </div>
+                                        <span class="text-[10px] text-slate-400">${c.time}</span>
+                                      </div>
+                                      <p class="text-slate-700 font-medium">${c.text}</p>
+                                    </div>
+                                  `).join('')}
+                                </div>
+                                <div class="flex gap-2 pt-2 border-t border-slate-100">
+                                  <input type="text" id="chat-input" placeholder="Type a comment or question..." class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500" onkeypress="if(event.key==='Enter')postDiscussionComment()">
+                                  <button onclick="postDiscussionComment()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-xs transition">
+                                    Post
+                                  </button>
+                                </div>
+                              </div>
+
+                            </div>
+                          ` : ''}
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+
+                  <div class="bg-sky-50 border border-sky-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">📤</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-sky-900">Evidence Uploaded & Tracked</h4>
+                        <p class="text-[11px] text-sky-700">Files are logged in the Evidence Tracker. Now, let's step into Consultant Michael Chang's view to perform the pre-audit gap review.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(6)" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Login as Consultant (Michael) →
+                    </button>
+                  </div>
+
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 6: Consultant Pre-Audit Gap Review (ConsultantDashboard.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 6) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Michael Chang', 'Compliance Consultant', 'M', 'bg-amber-100 text-amber-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('consultant', 'dashboard')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pre-Audit Advisory</span>
+                        <span class="text-xs text-slate-400 font-semibold">• Readiness Assessment</span>
+                      </div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Acme Financial Services — PCI-DSS Readiness</h2>
+                      <p class="text-sm text-slate-500 font-medium">Review customer submissions, verify gaps, and leave recommendations before formal QSA assessment.</p>
+                    </div>
+                    <button onclick="showToast('Advisory summary recorded for QSA review', 'success')" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <span>📝 Save Advisory Notes</span>
+                    </button>
+                  </div>
+
+                  <div class="space-y-4">
+                    ${state.requirements.map(r => `
+                      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
+                        <div class="flex justify-between items-start">
+                          <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                              <span class="font-mono font-bold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${r.code}</span>
+                              <h4 class="font-bold text-slate-900 text-sm">${r.title}</h4>
+                            </div>
+                            <div class="flex items-center space-x-2 text-xs text-slate-500">
+                              <span>Vault Documents:</span>
+                              <span class="font-mono font-semibold text-sky-700">${r.evidenceFiles.map(f=>f.name).join(', ')}</span>
+                            </div>
+                          </div>
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            Consultant Ready
+                          </span>
+                        </div>
+
+                        <div class="bg-amber-50/60 border border-amber-100 rounded-xl p-3">
+                          <label class="block text-[10px] font-bold uppercase tracking-wider text-amber-800 mb-1">Advisory Consultant Guidance / Gap Note:</label>
+                          <p class="text-xs text-slate-800 font-medium">${r.consultantNote}</p>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">💡</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-amber-900">Consultant Review Complete</h4>
+                        <p class="text-[11px] text-amber-800">Gap analysis notes logged. Ready for Lead QSA Alex Sterling to execute formal security audit.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(7)" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Login as Lead QSA (Alex) →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 7: QSA Assessor Audit Matrix (QsaAuditView.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 7) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Alex Sterling', 'Qualified Security Assessor (QSA)', 'A', 'bg-teal-100 text-teal-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('qsa', 'dashboard')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">Primary Assessor Portal</span>
+                        <span class="text-xs text-slate-400 font-semibold">• Formal QSA Evaluation</span>
+                      </div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">QSA Security Assessment Matrix</h2>
+                      <p class="text-sm text-slate-500 font-medium">Inspect evidence, attach assessor working papers, and route verified controls to QA.</p>
+                    </div>
+                    <button onclick="qsaBatchAcceptAll()" class="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <span>✅ Accept All & Assign to QA</span>
+                    </button>
+                  </div>
+
+                  <div class="space-y-4">
+                    ${state.requirements.map(r => `
+                      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                          <div>
+                            <div class="flex items-center space-x-2">
+                              <span class="font-mono font-bold text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">${r.code}</span>
+                              <h4 class="font-bold text-slate-900 text-sm">${r.title}</h4>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">${r.desc}</p>
+                          </div>
+                          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${r.badgeClass}">
+                            ${r.badge}
+                          </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                          <!-- Customer Evidence Vault -->
+                          <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Customer Evidence Vault</span>
+                            <div class="space-y-1">
+                              ${r.evidenceFiles.map(f => `
+                                <div class="flex justify-between items-center text-xs font-mono font-bold text-sky-700">
+                                  <span>📄 ${f.name}</span>
+                                  <button onclick="showToast('Inspecting ${f.name}', 'info')" class="text-sky-600 font-sans hover:underline">Inspect</button>
+                                </div>
+                              `).join('')}
+                            </div>
+                          </div>
+
+                          <!-- Assessor Working Papers Box -->
+                          <div class="bg-teal-50/50 rounded-xl p-3 border border-teal-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-teal-800 block mb-1">Assessor Working Papers</span>
+                            <div class="space-y-1">
+                              ${r.workingPapers.map(wp => `
+                                <div class="flex justify-between items-center text-xs font-mono font-bold text-teal-800">
+                                  <span>📝 ${wp.name}</span>
+                                  <button onclick="showToast('Working paper verified', 'info')" class="text-teal-700 font-sans hover:underline">Details</button>
+                                </div>
+                              `).join('')}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                          <button onclick="showToast('Flagged requirement for revision', 'warning')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg text-xs transition border border-rose-200">
+                            Disapprove / Incomplete
+                          </button>
+                          <button onclick="showToast('Control ${r.id} accepted and assigned to QA!', 'success')" class="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-xs shadow-xs transition">
+                            Accept & Assign to QA →
+                          </button>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+
+                  <div class="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">🛡️</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-teal-900">QSA Audit Finalized</h4>
+                        <p class="text-[11px] text-teal-800">All controls evaluated and assigned to Quality Assurance. Let's switch to QA Auditor Sarah Jenkins.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(8)" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Login as QA Auditor (Sarah) →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 8: QA Reviewer Independent Sign-Off (QaAuditView.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 8) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Sarah Jenkins', 'Quality Assurance (QA)', 'S', 'bg-indigo-100 text-indigo-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('qa', 'dashboard')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Quality Assurance</span>
+                        <span class="text-xs text-slate-400 font-semibold">• Secondary Independent Check</span>
+                      </div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">QA Review & Verification Console</h2>
+                      <p class="text-sm text-slate-500 font-medium">Perform dual verification on Customer Evidence & QSA Working Papers before official completion.</p>
+                    </div>
+                    <button onclick="qaApproveAllRequirements()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <span>✨ QA Batch Verify & Sign-Off</span>
+                    </button>
+                  </div>
+
+                  <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                      <thead>
+                        <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                          <th class="py-3 px-4">Req</th>
+                          <th class="py-3 px-4">Control Description</th>
+                          <th class="py-3 px-4">Customer Files</th>
+                          <th class="py-3 px-4">QSA Working Paper</th>
+                          <th class="py-3 px-4">QA Status</th>
+                          <th class="py-3 px-4 text-right">Verification Action</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-100 text-xs">
+                        ${state.requirements.map(r => `
+                          <tr class="hover:bg-slate-50/60 transition">
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-700">${r.code}</td>
+                            <td class="py-3.5 px-4 font-semibold text-slate-900">${r.title}</td>
+                            <td class="py-3.5 px-4 font-mono text-[11px] text-sky-700">${r.evidenceFiles.map(f=>'📄 '+f.name).join('<br/>')}</td>
+                            <td class="py-3.5 px-4 font-mono text-[11px] text-teal-700">${r.workingPapers.map(wp=>'📝 '+wp.name).join('<br/>')}</td>
+                            <td class="py-3.5 px-4">
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                QA Approved
+                              </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-right">
+                              <button onclick="showToast('Requirement ${r.id} QA signed-off!', 'success')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs border border-emerald-200 transition">
+                                ✓ Sign-Off
+                              </button>
+                            </td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">🔍</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-indigo-900">QA Independent Verification Complete</h4>
+                        <p class="text-[11px] text-indigo-800">100% controls verified. Now Super Admin can upload the official ROC, issue the AOC, and complete the audit.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(9)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      Return to Super Admin Panel →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 9: Admin Panel -> ROC / AOC Publishing (AdminComplianceAuditView.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 9) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('Super Administrator', 'Super Administrator', 'A', 'bg-purple-100 text-purple-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('admin', 'compliances')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Super Admin Governance</span>
+                        <span class="text-xs text-slate-400 font-semibold">• Milestone & Certification</span>
+                      </div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Acme Financial — PCI-DSS Certification Console</h2>
+                      <p class="text-sm text-slate-500 font-medium">All controls QA verified. Set completion milestone date, upload official ROC/AOC reports, and certify project.</p>
+                    </div>
+                    <button onclick="publishFinalReports()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <span>📜 Publish ROC & AOC Reports</span>
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Milestone Status</span>
+                      <div class="text-2xl font-black text-emerald-600">100% Verified</div>
+                      <p class="text-xs text-slate-500">All requirements passed QSA assessment and QA secondary check.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Official ROC Report</span>
+                      <div class="flex items-center space-x-2">
+                        <span class="text-xs font-mono font-bold text-slate-800">${state.uploadedRoc ? '✅ ROC_Comprehensive_2026.pdf' : 'ROC_Report_Acme_v1.0.pdf'}</span>
+                      </div>
+                      <button onclick="simulateUploadRoc()" class="w-full py-1.5 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-lg text-xs border border-slate-200 transition">
+                        Upload Signed ROC
+                      </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-3">
+                      <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700">Attestation of Compliance (AOC)</span>
+                      <div class="flex items-center space-x-2">
+                        <span class="text-xs font-mono font-bold text-slate-800">${state.uploadedAoc ? '✅ AOC_Attestation_Signed.pdf' : 'AOC_Attestation_Signed.pdf'}</span>
+                      </div>
+                      <button onclick="simulateUploadAoc()" class="w-full py-1.5 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 font-bold rounded-lg text-xs border border-slate-200 transition">
+                        Upload Signed AOC
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                      <span class="text-2xl">🏆</span>
+                      <div>
+                        <h4 class="text-xs font-bold text-purple-900">Project Certified & Completed</h4>
+                        <p class="text-[11px] text-purple-800">ROC & AOC published to customer repository. Let's switch to Customer POC to view and download the official certificate and export bundle.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(10)" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                      View Final Sign-off as Customer POC →
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // SCREEN 10: Customer POC Attestations & Evidence Export (AttestationReportsPage.tsx)
+      // -----------------------------------------------------------------------
+      else if (screenNum === 10) {
+        canvas.innerHTML = `
+          <div class="h-full flex flex-col">
+            ${renderAppNavbar('David Miller (Acme Financial)', 'Customer Organization', 'D', 'bg-sky-100 text-sky-700')}
+            <div class="flex-1 flex overflow-hidden">
+              ${renderAppSidebar('customer', 'reports')}
+              <main class="flex-1 p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+                <div class="max-w-7xl mx-auto space-y-6">
+                  
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="flex items-center space-x-2 mb-1">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Audit Certified</span>
+                        <span class="text-xs text-slate-400 font-semibold">• Official Attestation Issued</span>
+                      </div>
+                      <h2 class="text-2xl font-black text-slate-900 tracking-tight">Attestations, Reports & Evidence Export</h2>
+                      <p class="text-sm text-slate-500 font-medium">Download your official Attestation of Compliance (AOC), Report on Compliance (ROC), and complete audit-ready evidence package.</p>
+                    </div>
+                    <button onclick="openEvidenceExportModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-xs transition flex items-center space-x-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                      <span>Export Compliance Evidence Package (ZIP)</span>
+                    </button>
+                  </div>
+
+                  <!-- Official AOC Certificate Card Preview -->
+                  <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl border-2 border-sky-500 shadow-2xl p-8 text-white relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-white font-black text-9xl">AOC</div>
+                    
+                    <div class="flex justify-between items-start mb-6">
+                      <div>
+                        <span class="text-[10px] font-mono tracking-widest text-sky-400 font-bold uppercase">Official Compliance Certificate</span>
+                        <h3 class="text-2xl font-black text-white mt-1">Attestation of Compliance (AOC)</h3>
+                        <p class="text-xs text-slate-300">PCI-DSS Version 4.0 Assessment Engagement</p>
+                      </div>
+                      <div class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 text-xl font-bold">
+                        🛡️
+                      </div>
+                    </div>
+
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 backdrop-blur-sm text-xs text-slate-200 leading-relaxed">
+                      This document officially certifies that <strong class="text-white">Acme Financial Services, Inc.</strong> has fulfilled and successfully satisfied all required security criteria and technical safeguards for the <strong class="text-sky-300">Cardholder Data Environment (CDE)</strong> under the Payment Card Industry Data Security Standard (PCI-DSS).
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 pt-4 border-t border-white/10 text-xs">
+                      <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold">Qualified Security Assessor:</span>
+                        <p class="font-semibold text-white mt-0.5">Alex Sterling (QSA #204-912)</p>
+                      </div>
+                      <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold">QA Verifier:</span>
+                        <p class="font-semibold text-white mt-0.5">Sarah Jenkins (Panacea QA)</p>
+                      </div>
+                      <div>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold">Issued Milestone:</span>
+                        <p class="font-semibold text-sky-400 mt-0.5">September 11, 2026</p>
+                      </div>
+                    </div>
+
+                    <div class="mt-6 flex gap-3">
+                      <button onclick="showToast('Downloading Official AOC Certificate PDF...', 'success')" class="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-slate-900 font-bold rounded-xl text-xs transition shadow-md">
+                        📥 Download Signed AOC (PDF)
+                      </button>
+                      <button onclick="showToast('Downloading Full Comprehensive ROC Report...', 'info')" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs transition border border-white/20">
+                        📄 Download Comprehensive ROC
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                      <div class="w-12 h-12 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-2xl shrink-0">
+                        🎉
+                      </div>
+                      <div>
+                        <h4 class="text-sm font-black text-emerald-950">End-to-End Compliance Audit Lifecycle Completed!</h4>
+                        <p class="text-xs text-emerald-800">You walked through all 5 roles: Admin provisioning ➔ Customer upload ➔ Consultant readiness ➔ QSA audit ➔ QA verification ➔ ROC/AOC certification.</p>
+                      </div>
+                    </div>
+                    <button onclick="goToScreen(1)" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-xs transition shrink-0">
+                      Restart Walkthrough from Step 1 🔄
+                    </button>
+                  </div>
+
+                </div>
+              </main>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Modal Operations
+    function openModal(contentHtml) {
+      const box = document.getElementById('modal-content-box');
+      box.innerHTML = contentHtml;
+      document.getElementById('modal-container').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-container').classList.add('hidden');
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      showToast('Welcome back, Super Administrator!', 'success');
+      goToScreen(2);
+    }
+
+    // Register Assessor Modal
+    function openCreateAssessorModal() {
+      openModal(`
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-base font-bold text-slate-900">Register Security Auditor</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+          </div>
+          <form onsubmit="handleCreateAssessorSubmit(event)" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
+              <input type="text" id="form-ass-name" required value="Elena Vance" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
+              <input type="email" id="form-ass-email" required value="elena.qsa@panaceainfosec.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Role Type</label>
+              <select id="form-ass-type" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+                <option value="2">Qualified Security Assessor (QSA)</option>
+                <option value="3">Quality Assurance (QA)</option>
+                <option value="4">Compliance Consultant</option>
+              </select>
+            </div>
+            <div class="pt-3 flex justify-end space-x-2">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 shadow-xs">Register Auditor</button>
+            </div>
+          </form>
+        </div>
+      `);
+    }
+
+    function handleCreateAssessorSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('form-ass-name').value;
+      const email = document.getElementById('form-ass-email').value;
+      const type = parseInt(document.getElementById('form-ass-type').value);
+      
+      let roleName = 'QSA Assessor';
+      let badgeClass = 'bg-teal-50 text-teal-700 border-teal-200';
+      if (type === 3) { roleName = 'QA Auditor'; badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200'; }
+      if (type === 4) { roleName = 'Compliance Consultant'; badgeClass = 'bg-amber-50 text-amber-700 border-amber-200'; }
+
+      state.assessors.push({
+        id: `ass-${state.assessors.length + 1}`,
+        name,
+        email,
+        phone: '+1 555-0155',
+        type,
+        roleName,
+        badgeClass
+      });
+
+      closeModal();
+      showToast(`Registered ${roleName}: ${name}!`, 'success');
+      renderScreen(2);
+    }
+
+    // Register Customer Modal
+    function openCreateCustomerModal() {
+      openModal(`
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-base font-bold text-slate-900">Register Customer Organization</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+          </div>
+          <form onsubmit="handleCreateCustomerSubmit(event)" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Company / Organization Name</label>
+              <input type="text" id="form-cust-name" required value="FinTech Global, Corp" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Primary POC Name</label>
+              <input type="text" id="form-cust-poc" required value="Rachel Adams" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">POC Email</label>
+              <input type="email" id="form-cust-email" required value="rachel.poc@fintechglobal.io" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Initial Process Scope</label>
+              <input type="text" id="form-cust-scope" required value="Payment Gateway Infrastructure" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 font-semibold text-slate-800">
+            </div>
+            <div class="pt-3 flex justify-end space-x-2">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 shadow-xs">Register Customer</button>
+            </div>
+          </form>
+        </div>
+      `);
+    }
+
+    function handleCreateCustomerSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('form-cust-name').value;
+      const pocName = document.getElementById('form-cust-poc').value;
+      const pocEmail = document.getElementById('form-cust-email').value;
+      const process = document.getElementById('form-cust-scope').value;
+
+      state.customers.push({
+        id: `cust-${state.customers.length + 1}`,
+        name,
+        pocName,
+        pocEmail,
+        phone: '+1 555-0177',
+        process,
+        status: 'Active'
+      });
+
+      closeModal();
+      showToast(`Created customer org: ${name}!`, 'success');
+      renderScreen(3);
+    }
+
+    // Map Project Modal
+    function openCreateProjectModal() {
+      openModal(`
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-base font-bold text-slate-900">Map 5-Party Compliance Scope</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+          </div>
+          <form onsubmit="handleCreateProjectSubmit(event)" class="space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Compliance Framework</label>
+              <select class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-800">
+                <option>PCI-DSS 4.0 (Cardholder Data Security)</option>
+                <option>ISO/IEC 27001:2022 ISMS</option>
+                <option>SOC 2 Type II</option>
+                <option>HIPAA Security Rule</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Customer & Scope</label>
+              <select class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-800">
+                <option>Acme Financial Services — CDE</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Lead QSA</label>
+                <select class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-800">
+                  <option>Alex Sterling (QSA)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">QA Auditor</label>
+                <select class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-800">
+                  <option>Sarah Jenkins (QA)</option>
+                </select>
+              </div>
+            </div>
+            <div class="pt-3 flex justify-end space-x-2">
+              <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 shadow-xs">Create Engagement Mapping</button>
+            </div>
+          </form>
+        </div>
+      `);
+    }
+
+    function handleCreateProjectSubmit(e) {
+      e.preventDefault();
+      closeModal();
+      showToast('Compliance Project Mapped across all 5 roles!', 'success');
+      renderScreen(4);
+    }
+
+    // Evidence Submission
+    function handleEvidenceSubmit(reqId) {
+      const noteInput = document.getElementById(`evidence-note-${reqId}`);
+      const req = state.requirements.find(r => r.id === reqId);
+      if (req) {
+        req.evidenceFiles.push({
+          id: `doc-${Date.now()}`,
+          name: `uploaded_evidence_${reqId}_signed.pdf`,
+          size: '1.9 MB',
+          uploadedBy: 'David Miller (Customer)',
+          uploadDate: 'Just now'
+        });
+        showToast(`Evidence artifact added to Req ${reqId} Tracker!`, 'success');
+        if (noteInput) noteInput.value = '';
+        renderScreen(5);
+      }
+    }
+
+    // Post Discussion Message
+    function postDiscussionComment() {
+      const input = document.getElementById('chat-input');
+      if (!input || !input.value.trim()) return;
+
+      state.comments.push({
+        id: `c-${Date.now()}`,
+        user: 'David Miller',
+        role: 'Customer',
+        roleBadge: 'bg-sky-50 text-sky-700',
+        text: input.value.trim(),
+        time: 'Just now'
+      });
+
+      input.value = '';
+      showToast('Comment recorded to audit thread', 'success');
+      renderScreen(5);
+    }
+
+    // QSA Batch Accept
+    function qsaBatchAcceptAll() {
+      state.requirements.forEach(r => {
+        r.filterCategory = 'qa_approved';
+        r.allStatus = 4;
+        r.badge = 'Assigned to QA';
+        r.badgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      });
+      showToast('All requirements accepted by QSA and assigned to QA!', 'success');
+      renderScreen(7);
+    }
+
+    // QA Batch Approve
+    function qaApproveAllRequirements() {
+      state.requirements.forEach(r => {
+        r.filterCategory = 'qa_approved';
+        r.allStatus = 4;
+        r.badge = 'QA Approved';
+        r.badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      });
+      state.projects[0].progress = 100;
+      showToast('All requirements QA Verified and Approved!', 'success');
+      renderScreen(8);
+    }
+
+    // Admin Upload ROC / AOC
+    function simulateUploadRoc() {
+      state.uploadedRoc = true;
+      showToast('Signed ROC Document uploaded and validated!', 'success');
+      renderScreen(9);
+    }
+
+    function simulateUploadAoc() {
+      state.uploadedAoc = true;
+      showToast('Signed AOC Attestation uploaded and recorded!', 'success');
+      renderScreen(9);
+    }
+
+    function publishFinalReports() {
+      state.uploadedRoc = true;
+      state.uploadedAoc = true;
+      showToast('Official ROC and AOC published to customer repository!', 'success');
+      goToScreen(10);
+    }
+
+    // Evidence Export Modal (Exact match of EvidenceExportModal.tsx)
+    function openEvidenceExportModal() {
+      openModal(`
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center space-x-2">
+              <span class="text-xl">📦</span>
+              <h3 class="text-base font-bold text-slate-900">Export Compliance Evidence Package</h3>
+            </div>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+          </div>
+          <p class="text-xs text-slate-500 mb-4">Download a structured, audit-ready ZIP archive of all evidence documents, assessor working papers, and signed reports with cryptographic SHA-256 manifest.</p>
+          
+          <div class="bg-slate-900 text-slate-200 rounded-xl p-3.5 font-mono text-[11px] mb-4 space-y-1">
+            <div class="text-sky-400 font-bold">📂 PCI-DSS-4.0_AcmeCorp_Evidence/</div>
+            <div class="text-slate-400 pl-4">├── 📄 manifest.json (SHA-256 Checksums)</div>
+            <div class="text-slate-400 pl-4">├── 📁 Req_1.1_Firewall_Standards/ (${state.requirements[0].evidenceFiles.length} Evidence Docs)</div>
+            <div class="text-slate-400 pl-4">├── 📁 Req_1.2_Rule_Configurations/ (${state.requirements[1].evidenceFiles.length} Evidence Docs)</div>
+            <div class="text-slate-400 pl-4">└── 📁 Reports/ (AOC_Signed.pdf, ROC_Comprehensive.pdf)</div>
+          </div>
+
+          <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs mb-4">
+            <span class="text-slate-600">Audit Package Size: <strong>14.8 MB</strong></span>
+            <span class="text-emerald-700 font-bold">✓ EvidenceDownloadLog Recorded</span>
+          </div>
+
+          <div class="flex justify-end space-x-2">
+            <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 text-xs">Cancel</button>
+            <button onclick="downloadZipManifest()" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 shadow-xs text-xs flex items-center space-x-1.5">
+              <span>Download Audit ZIP</span>
+            </button>
+          </div>
+        </div>
+      `);
+    }
+
+    function downloadZipManifest() {
+      closeModal();
+      showToast('Compiling Excel matrix and streaming ZIP package...', 'info');
+      setTimeout(() => {
+        const manifestData = {
+          auditProject: "Acme Financial Services - PCI-DSS 4.0",
+          status: "Certified",
+          leadQsa: "Alex Sterling",
+          qaDirector: "Sarah Jenkins",
+          date: new Date().toISOString(),
+          requirementsCount: state.requirements.length,
+          files: state.requirements.flatMap(r => r.evidenceFiles.map(f => ({ req: r.id, file: f.name, size: f.size })))
+        };
+        const blob = new Blob([JSON.stringify(manifestData, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Compliance_Evidence_Package_AcmeCorp_Manifest.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✅ Compliance ZIP & Manifest downloaded successfully!', 'success');
+      }, 700);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      goToScreen(1);
+    });
+  </script>
+</body>
+</html>

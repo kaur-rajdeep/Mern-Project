@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Plus, Calendar, Eye, X, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Plus, Calendar, Eye, X, ArrowRight, AlertCircle, RotateCcw } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { validateDateRange } from '../../utils/validators';
+import { useFormDraft } from '../../hooks/useFormDraft';
+import { useNavigationGuard } from '../../hooks/useNavigationGuard';
+import { NavigationGuardModal } from '../../components/common/NavigationGuardModal';
 
 export const ComplianceProjects: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +20,7 @@ export const ComplianceProjects: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [dateRangeError, setDateRangeError] = useState('');
 
   const [formData, setFormData] = useState({
     serviceId: 1,
@@ -27,6 +32,43 @@ export const ComplianceProjects: React.FC = () => {
     startDate: '',
     endDate: '',
   });
+
+  // localStorage draft for compliance project creation
+  const { getDraft, saveDraft, clearDraft, hasDraft } = useFormDraft<typeof formData>('createComplianceProject');
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Navigation guard
+  const formHasData = createModalOpen && Boolean(
+    formData.customerId || formData.startDate || formData.endDate || formData.qsaId
+  );
+
+  const { isGuardOpen, confirmNavigation, cancelNavigation, proceedNavigation } = useNavigationGuard({
+    isDirty: formHasData,
+    onDiscard: () => {
+      clearDraft();
+      setCreateModalOpen(false);
+      setFormData({
+        serviceId: 1,
+        customerId: '',
+        processId: '',
+        qsaId: '',
+        qaId: '',
+        consultantId: '',
+        startDate: '',
+        endDate: '',
+      });
+      setDateRangeError('');
+      setDraftRestored(false);
+      toast.info('Draft discarded and cleared from local storage.');
+    },
+  });
+
+  const handleSaveDraftAndLeave = () => {
+    saveDraft(formData);
+    toast.success('Project draft saved to local storage.', { duration: 4000 });
+    setCreateModalOpen(false);
+    proceedNavigation();
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -57,6 +99,28 @@ export const ComplianceProjects: React.FC = () => {
     fetchData();
   }, []);
 
+  // Restore draft when modal opens
+  useEffect(() => {
+    if (createModalOpen) {
+      if (hasDraft()) {
+        const draft = getDraft();
+        if (draft) {
+          setFormData(draft);
+          setDraftRestored(true);
+          if (draft.customerId) {
+            handleCustomerSelect(draft.customerId);
+          }
+          toast.info('Draft restored from local storage.', { duration: 4000 });
+        }
+      } else {
+        setDraftRestored(false);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createModalOpen]);
+
+
+
   const handleCustomerSelect = async (custId: string) => {
     setFormData((prev) => ({ ...prev, customerId: custId, processId: '' }));
     if (!custId) {
@@ -75,11 +139,19 @@ export const ComplianceProjects: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const dateErr = validateDateRange(formData.startDate, formData.endDate);
+    setDateRangeError(dateErr);
+    if (dateErr) {
+      toast.error(dateErr);
+      return;
+    }
     try {
       const res = await api.post('/admin/compliance-projects', formData);
       if (res.data.success) {
         toast.success('Compliance project mapping created.');
+        clearDraft();
         setCreateModalOpen(false);
+        setDraftRestored(false);
         fetchData();
       }
     } catch (error: any) {
@@ -186,7 +258,7 @@ export const ComplianceProjects: React.FC = () => {
 
       {/* Assign Project Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900">Assign Compliance Project</h3>
@@ -308,7 +380,10 @@ export const ComplianceProjects: React.FC = () => {
                   <input
                     type="date"
                     value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, startDate: e.target.value });
+                      setDateRangeError(validateDateRange(e.target.value, formData.endDate));
+                    }}
                     className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
                   />
                 </div>
@@ -317,11 +392,22 @@ export const ComplianceProjects: React.FC = () => {
                   <input
                     type="date"
                     value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                    onChange={(e) => {
+                      setFormData({ ...formData, endDate: e.target.value });
+                      setDateRangeError(validateDateRange(formData.startDate, e.target.value));
+                    }}
+                    className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                      dateRangeError ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                    }`}
                   />
                 </div>
               </div>
+              {dateRangeError && (
+                <p className="flex items-center gap-1.5 text-[11px] text-rose-600 font-medium -mt-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  {dateRangeError}
+                </p>
+              )}
 
               <div className="flex justify-end space-x-2 pt-3">
                 <button
@@ -342,6 +428,18 @@ export const ComplianceProjects: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Navigation guard — fires when user tries to leave while project form is open */}
+      <NavigationGuardModal
+        isOpen={isGuardOpen}
+        onSave={handleSaveDraftAndLeave}
+        onDiscard={confirmNavigation}
+        onStay={cancelNavigation}
+        saveLabel="Save Draft & Leave"
+        discardLabel="Discard & Clear Draft"
+        title="Unsaved Project Mapping"
+        description="You have unsaved details in the compliance project form. Would you like to save your draft to local storage before leaving, or discard it?"
+      />
     </div>
   );
 };

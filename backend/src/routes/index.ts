@@ -8,6 +8,7 @@ import consultantRoutes from './consultantRoutes';
 import commentRoutes from './commentRoutes';
 import analyticsRoutes from './analyticsRoutes';
 import fileRoutes from './fileRoutes';
+import complianceRoutes from './complianceExportRoutes';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/consultant', consultantRoutes);
 router.use('/comments', commentRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/files', fileRoutes);
+router.use('/compliance', complianceRoutes);
 
 export default router;

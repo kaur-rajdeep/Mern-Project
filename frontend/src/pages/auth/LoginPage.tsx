@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { validateEmail } from '../../utils/validators';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please enter your email and password.');
-      return;
-    }
+
+    const emailErr = validateEmail(email);
+    const pwdErr = !password ? 'Password is required.' : '';
+    setEmailError(emailErr);
+    setPasswordError(pwdErr);
+    if (emailErr || pwdErr) return;
 
     try {
       setIsLoading(true);
@@ -67,7 +72,7 @@ export const LoginPage: React.FC = () => {
           <p className="text-xs text-slate-500 font-medium">Compliance & Cybersecurity Assessment Portal</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4" noValidate>
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
               Email Address
@@ -78,11 +83,22 @@ export const LoginPage: React.FC = () => {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError(validateEmail(e.target.value));
+                }}
                 placeholder="user@example.com"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
+                className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition ${
+                  emailError ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
               />
             </div>
+            {emailError && (
+              <p className="mt-1.5 flex items-center gap-1 text-[11px] text-rose-600 font-medium">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                {emailError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -100,11 +116,22 @@ export const LoginPage: React.FC = () => {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (passwordError) setPasswordError(e.target.value ? '' : 'Password is required.');
+                }}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
+                className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition ${
+                  passwordError ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
               />
             </div>
+            {passwordError && (
+              <p className="mt-1.5 flex items-center gap-1 text-[11px] text-rose-600 font-medium">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                {passwordError}
+              </p>
+            )}
           </div>
 
           <button

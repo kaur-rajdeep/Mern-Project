@@ -3,9 +3,15 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
+import dns from 'dns';
 import routes from './routes';
 
 dotenv.config();
+
+// Ensure reliable DNS resolution for MongoDB Atlas SRV records
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch (e) {}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,31 +38,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'Panacea Infosec Compliance & Audit Management API',
-  });
-});
-
-// API Routes
-app.use('/api', routes);
-
-import { formatErrorMessage } from './utils/formatError';
-
-// Global Error Handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Server error:', err);
-  const friendlyMessage = formatErrorMessage(err);
-  res.status(err.status || 500).json({
-    success: false,
-    message: friendlyMessage,
-  });
-});
-
-// Connect Database
+// Database Connection Management
 let isConnecting = false;
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1 || isConnecting) return;
@@ -74,12 +56,38 @@ const connectDB = async () => {
 // Initiate connection immediately
 connectDB();
 
-// Ensure DB is connected before processing requests
-app.use(async (req, res, next) => {
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString(),
+    service: 'Panacea Infosec Compliance & Audit Management API',
+  });
+});
+
+// Ensure DB is connected before processing any API requests
+app.use('/api', async (req, res, next) => {
+  if (req.path === '/health') return next();
   if (mongoose.connection.readyState === 0) {
     await connectDB();
   }
   next();
+});
+
+// API Routes
+app.use('/api', routes);
+
+import { formatErrorMessage } from './utils/formatError';
+
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Server error:', err);
+  const friendlyMessage = formatErrorMessage(err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: friendlyMessage,
+  });
 });
 
 // Start listening in standalone/local environments

@@ -25,6 +25,7 @@ import { UserType, UserStatus } from '../constants/roles';
 import { mailService } from '../services/mailService';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
+import { createCustomerSchema, createAssessorSchema, validate } from '../middleware/validateRequest';
 
 export class AdminController {
   public async getDashboardStats(req: Request, res: Response): Promise<void> {
@@ -82,6 +83,13 @@ export class AdminController {
   public async createCustomer(req: Request, res: Response): Promise<void> {
     try {
       const { fullName, email, phoneNumber, companyName, companyNumber, address, password } = req.body;
+
+      // Validate all input fields
+      const validation = validate(createCustomerSchema, req.body);
+      if (!validation.ok) {
+        res.status(400).json({ success: false, message: validation.message });
+        return;
+      }
 
       const existing = await User.findOne({ email: email.toLowerCase().trim() });
       if (existing) {
@@ -290,6 +298,13 @@ export class AdminController {
   public async createAssessor(req: Request, res: Response): Promise<void> {
     try {
       const { fullName, email, phoneNumber, userType, password } = req.body;
+
+      // Validate all input fields
+      const validation = validate(createAssessorSchema, { ...req.body, userType: Number(userType) });
+      if (!validation.ok) {
+        res.status(400).json({ success: false, message: validation.message });
+        return;
+      }
 
       const existing = await User.findOne({ email: email.toLowerCase().trim() });
       if (existing) {

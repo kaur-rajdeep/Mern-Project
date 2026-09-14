@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Mail, ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { validateEmail } from '../../utils/validators';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      toast.error('Please enter your email address.');
-      return;
-    }
+    const err = validateEmail(email);
+    setEmailError(err);
+    if (err) return;
 
     try {
       setIsLoading(true);
@@ -59,7 +60,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Email Address
@@ -70,11 +71,22 @@ export const ForgotPasswordPage: React.FC = () => {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError(validateEmail(e.target.value));
+                  }}
                   placeholder="your.name@company.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition"
+                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition ${
+                    emailError ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
                 />
               </div>
+              {emailError && (
+                <p className="mt-1.5 flex items-center gap-1 text-[11px] text-rose-600 font-medium">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  {emailError}
+                </p>
+              )}
             </div>
 
             <button

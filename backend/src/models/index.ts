@@ -15,3 +15,4 @@ export * from './ComplianceReport';
 export * from './ArchivedProcess';
 export * from './Country';
 export * from './CmsPage';
+export * from './EvidenceDownloadLog';

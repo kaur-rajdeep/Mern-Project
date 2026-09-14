@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import api from '../../services/api';
+import { EvidenceExportModal } from '../../components/common/EvidenceExportModal';
 import { toast } from 'sonner';
 
 export const AdminComplianceAuditView: React.FC = () => {
@@ -53,6 +54,7 @@ export const AdminComplianceAuditView: React.FC = () => {
   const [isUploadingAoc, setIsUploadingAoc] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const fetchProjectDetails = async () => {
     if (!projectId) return;
@@ -407,6 +409,13 @@ export const AdminComplianceAuditView: React.FC = () => {
 
           {/* Quick Header Action Bar */}
           <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="px-3.5 py-2 bg-panacea-600 hover:bg-panacea-700 text-white font-bold rounded-xl text-xs shadow-sm shadow-panacea-600/20 flex items-center space-x-1.5 transition"
+            >
+              <FileDown className="w-4 h-4 text-white" />
+              <span>Export Evidence Package</span>
+            </button>
             <button
               onClick={() => setAocModalOpen(true)}
               className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-xs flex items-center space-x-1.5 transition"
@@ -1012,6 +1021,19 @@ export const AdminComplianceAuditView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Evidence Package Export Security Modal */}
+      {data?.project && (
+        <EvidenceExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          processId={data.project.processId?._id || data.project.processId}
+          serviceId={data.project.serviceId}
+          customerId={data.project.customerId?._id || data.project.customerId}
+          processName={data.project.processId?.processName || 'Compliance Process'}
+          serviceName={data.service?.serviceName || `Service #${data.project.serviceId}`}
+        />
       )}
     </div>
   );

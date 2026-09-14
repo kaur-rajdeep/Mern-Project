@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -12,9 +12,11 @@ import {
   Settings,
   FolderLock,
   Award,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserType } from '../../types';
+import { LogoutConfirmModal } from '../common/LogoutConfirmModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,7 +24,9 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const userType = user?.userType;
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -38,19 +42,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-50 bg-slate-900/20 backdrop-blur-xs lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed lg:sticky top-16 bottom-0 left-0 z-40 w-64 h-[calc(100vh-4rem)] shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 ease-in-out ${
+        className={`fixed lg:sticky top-16 bottom-0 left-0 z-50 w-64 h-[calc(100vh-4rem)] shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="flex-1 overflow-y-auto py-5 px-3 space-y-6">
+        <div className="flex-1 overflow-y-auto py-5 px-3 flex flex-col">
           {/* Admin Navigation */}
           {userType === UserType.ADMIN && (
-            <div className="space-y-1">
+            <div className="space-y-1 mb-6">
               <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Administration
               </p>
@@ -87,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Customer Navigation */}
           {userType === UserType.CUSTOMER && (
-            <div className="space-y-1">
+            <div className="space-y-1 mb-6">
               <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Customer Workspace
               </p>
@@ -104,7 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* QSA Navigation */}
           {userType === UserType.QSA && (
-            <div className="space-y-1">
+            <div className="space-y-1 mb-6">
               <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 QSA Assessment Portal
               </p>
@@ -117,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* QA Navigation */}
           {userType === UserType.QA && (
-            <div className="space-y-1">
+            <div className="space-y-1 mb-6">
               <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Quality Assurance Portal
               </p>
@@ -130,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Consultant Navigation */}
           {userType === UserType.CONSULTANT && (
-            <div className="space-y-1">
+            <div className="space-y-1 mb-6">
               <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Consultant Portal
               </p>
@@ -141,11 +145,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-100">
+          {/* User Settings & Session Actions anchored to bottom */}
+          <div className="mt-auto pt-4 border-t border-slate-100 space-y-1">
             <NavLink to="/profile" className={linkClass}>
               <Settings className="w-4 h-4 shrink-0" />
-              <span>Profile & Password</span>
+              <span>Profile &amp; Password</span>
             </NavLink>
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs text-slate-600 hover:text-rose-600 hover:bg-rose-50/60 font-medium transition text-left group"
+            >
+              <LogOut className="w-4 h-4 shrink-0 text-slate-400 group-hover:text-rose-600 transition" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
 
@@ -156,6 +168,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </aside>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          logout();
+          navigate('/login');
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+        userName={user?.fullName}
+      />
     </>
   );
 };

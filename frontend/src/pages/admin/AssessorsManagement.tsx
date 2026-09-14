@@ -1,7 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { UserCheck, Plus, Download, Eye, X, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { UserCheck, Plus, Download, Eye, X, Trash2, AlertTriangle, ShieldAlert, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import {
+  validateFullName,
+  validateEmail,
+  validatePhone,
+  validateAdminPassword,
+} from '../../utils/validators';
+import { useFormDraft } from '../../hooks/useFormDraft';
+import { useNavigationGuard } from '../../hooks/useNavigationGuard';
+import { NavigationGuardModal } from '../../components/common/NavigationGuardModal';
+
+// Reusable inline field error
+const FieldError: React.FC<{ message: string }> = ({ message }) =>
+  message ? (
+    <p className="mt-1 flex items-center gap-1 text-[11px] text-rose-600 font-medium">
+      <AlertCircle className="w-3 h-3 shrink-0" />
+      {message}
+    </p>
+  ) : null;
 
 export const AssessorsManagement: React.FC = () => {
   const [assessors, setAssessors] = useState<any[]>([]);
@@ -29,6 +47,56 @@ export const AssessorsManagement: React.FC = () => {
     password: '',
   });
 
+  // Validation errors
+  const [formErrors, setFormErrors] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+  });
+
+  const validateForm = () => {
+    const errors = {
+      fullName: validateFullName(formData.fullName),
+      email: validateEmail(formData.email),
+      phoneNumber: validatePhone(formData.phoneNumber),
+      password: validateAdminPassword(formData.password),
+    };
+    setFormErrors(errors);
+    return !Object.values(errors).some(Boolean);
+  };
+
+  // localStorage draft for the create-assessor modal
+  const { getDraft, saveDraft, clearDraft, hasDraft } = useFormDraft<typeof formData>('createAssessor');
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Navigation guard — block page nav when modal is open with data entered
+  const formHasData = createModalOpen && (
+    formData.fullName.trim() !== '' ||
+    formData.email.trim() !== '' ||
+    formData.phoneNumber.trim() !== '' ||
+    formData.password.trim() !== ''
+  );
+
+  const { isGuardOpen, confirmNavigation, cancelNavigation, proceedNavigation } = useNavigationGuard({
+    isDirty: formHasData,
+    onDiscard: () => {
+      clearDraft();
+      setCreateModalOpen(false);
+      setFormData({ fullName: '', email: '', phoneNumber: '', userType: 2, password: '' });
+      setFormErrors({ fullName: '', email: '', phoneNumber: '', password: '' });
+      setDraftRestored(false);
+      toast.info('Draft discarded and cleared from local storage.');
+    },
+  });
+
+  const handleSaveDraftAndLeave = () => {
+    saveDraft(formData);
+    toast.success('Auditor details saved as draft in local storage.', { duration: 4000 });
+    setCreateModalOpen(false);
+    proceedNavigation();
+  };
+
   const fetchAssessors = () => {
     setIsLoading(true);
     const query = selectedRole !== 'all' ? `?userType=${selectedRole}` : '';
@@ -43,19 +111,50 @@ export const AssessorsManagement: React.FC = () => {
     fetchAssessors();
   }, [selectedRole]);
 
+  // Restore draft when create modal opens
+  useEffect(() => {
+    if (createModalOpen) {
+      if (hasDraft()) {
+        const draft = getDraft();
+        if (draft) {
+          setFormData(draft);
+          setDraftRestored(true);
+          toast.info('Draft restored — your previously entered details have been loaded.', { duration: 4000 });
+        }
+      } else {
+        setDraftRestored(false);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createModalOpen]);
+
+
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+      toast.error('Please fix the form errors before submitting.');
+      return;
+    }
     try {
       const res = await api.post('/admin/assessors', formData);
       if (res.data.success) {
         toast.success(res.data.message);
+        clearDraft(); // Remove draft after successful creation
         setCreateModalOpen(false);
         setFormData({ fullName: '', email: '', phoneNumber: '', userType: 2, password: '' });
+        setFormErrors({ fullName: '', email: '', phoneNumber: '', password: '' });
+        setDraftRestored(false);
         fetchAssessors();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create assessor.');
     }
+  };
+
+  const handleCloseCreateModal = () => {
+    // Keep draft in localStorage so it can be restored next time
+    setCreateModalOpen(false);
   };
 
   const openDeleteModal = async (assessor: any) => {
@@ -222,16 +321,24 @@ export const AssessorsManagement: React.FC = () => {
 
       {/* Add Assessor Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6 space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900">Add Security Assessor</h3>
-              <button onClick={() => setCreateModalOpen(false)}>
+              <button onClick={handleCloseCreateModal}>
                 <X className="w-5 h-5 text-slate-400 hover:text-slate-600" />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
+            {/* Draft restored banner */}
+            {draftRestored && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                <span>📋</span>
+                <span>Draft restored from your last session. <button type="button" onClick={() => { clearDraft(); setFormData({ fullName: '', email: '', phoneNumber: '', userType: 2, password: '' }); setDraftRestored(false); }} className="underline underline-offset-2 hover:text-amber-900">Clear draft</button></span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreate} className="space-y-3 text-xs" noValidate>
               <div>
                 <label className="font-bold text-slate-700">Role Designation</label>
                 <select
@@ -251,9 +358,15 @@ export const AssessorsManagement: React.FC = () => {
                   type="text"
                   required
                   value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  onChange={(e) => {
+                    setFormData({ ...formData, fullName: e.target.value });
+                    setFormErrors((prev) => ({ ...prev, fullName: validateFullName(e.target.value) }));
+                  }}
+                  className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                    formErrors.fullName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                  }`}
                 />
+                <FieldError message={formErrors.fullName} />
               </div>
 
               <div>
@@ -262,36 +375,58 @@ export const AssessorsManagement: React.FC = () => {
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setFormErrors((prev) => ({ ...prev, email: validateEmail(e.target.value) }));
+                  }}
+                  className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                    formErrors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                  }`}
                 />
+                <FieldError message={formErrors.email} />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700">Phone Number</label>
+                <label className="font-bold text-slate-700">
+                  Phone Number
+                  <span className="ml-1 text-slate-400 font-normal">(optional)</span>
+                </label>
                 <input
-                  type="text"
+                  type="tel"
                   value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  onChange={(e) => {
+                    setFormData({ ...formData, phoneNumber: e.target.value });
+                    setFormErrors((prev) => ({ ...prev, phoneNumber: validatePhone(e.target.value) }));
+                  }}
+                  placeholder="e.g. +91 98765 43210"
+                  className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                    formErrors.phoneNumber ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                  }`}
                 />
+                <FieldError message={formErrors.phoneNumber} />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700">Initial Password (Optional)</label>
+                <label className="font-bold text-slate-700">Initial Password <span className="font-normal text-slate-400">(Optional)</span></label>
                 <input
                   type="text"
                   placeholder="Defaults to auto-generated"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 font-mono"
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    setFormErrors((prev) => ({ ...prev, password: validateAdminPassword(e.target.value) }));
+                  }}
+                  className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 font-mono ${
+                    formErrors.password ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                  }`}
                 />
+                <FieldError message={formErrors.password} />
               </div>
 
               <div className="flex justify-end space-x-2 pt-3">
                 <button
                   type="button"
-                  onClick={() => setCreateModalOpen(false)}
+                  onClick={handleCloseCreateModal}
                   className="px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Cancel
@@ -471,6 +606,18 @@ export const AssessorsManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Navigation guard — fires when user tries to leave while assessor form is open */}
+      <NavigationGuardModal
+        isOpen={isGuardOpen}
+        onSave={handleSaveDraftAndLeave}
+        onDiscard={confirmNavigation}
+        onStay={cancelNavigation}
+        saveLabel="Save Draft & Leave"
+        discardLabel="Discard & Clear Draft"
+        title="Unsaved Auditor Form"
+        description="You have unsaved details in the auditor form. Would you like to save your draft to local storage before leaving, or discard it?"
+      />
     </div>
   );
 };

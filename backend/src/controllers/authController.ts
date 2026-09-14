@@ -7,11 +7,25 @@ import { UserStatus } from '../constants/roles';
 import { computeDeviceFingerprint } from '../utils/deviceFingerprint';
 import { mailService } from '../services/mailService';
 import { AuthRequest } from '../middleware/authMiddleware';
+import {
+  loginSchema,
+  forgotPasswordSchema,
+  changePasswordSchema,
+  updateProfileSchema,
+  validate,
+} from '../middleware/validateRequest';
 
 export class AuthController {
   public async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
+
+      // Validate input format
+      const validation = validate(loginSchema, req.body);
+      if (!validation.ok) {
+        res.status(400).json({ success: false, message: validation.message });
+        return;
+      }
 
       if (!email || !password) {
         res.status(400).json({ success: false, message: 'Email and password are required.' });
@@ -123,6 +137,14 @@ export class AuthController {
   public async forgotPassword(req: Request, res: Response): Promise<void> {
     try {
       const { email } = req.body;
+
+      // Validate email format
+      const validation = validate(forgotPasswordSchema, req.body);
+      if (!validation.ok) {
+        res.status(400).json({ success: false, message: validation.message });
+        return;
+      }
+
       if (!email) {
         res.status(400).json({ success: false, message: 'Email address is required.' });
         return;
@@ -163,6 +185,13 @@ export class AuthController {
         return;
       }
 
+      // Validate new password strength
+      const validation = validate(changePasswordSchema, req.body);
+      if (!validation.ok) {
+        res.status(400).json({ success: false, message: validation.message });
+        return;
+      }
+
       const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
       if (!isMatch) {
         res.status(400).json({ success: false, message: 'Current password does not match.' });
@@ -187,6 +216,13 @@ export class AuthController {
 
       if (!user) {
         res.status(401).json({ success: false, message: 'Not authenticated' });
+        return;
+      }
+
+      // Validate profile fields
+      const validation = validate(updateProfileSchema, req.body);
+      if (!validation.ok) {
+        res.status(400).json({ success: false, message: validation.message });
         return;
       }
 

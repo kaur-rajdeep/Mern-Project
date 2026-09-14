@@ -15,6 +15,7 @@ import {
 import api from '../../services/api';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { ThreadedComments } from '../../components/common/ThreadedComments';
+import { EvidenceExportModal } from '../../components/common/EvidenceExportModal';
 import { toast } from 'sonner';
 import { AuditItem } from '../../types';
 
@@ -28,6 +29,7 @@ export const ConsultantAuditView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [uploadFiles, setUploadFiles] = useState<{ [key: string]: FileList | null }>({});
   const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
@@ -186,8 +188,15 @@ export const ConsultantAuditView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 shrink-0">
-          <span className="px-3 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-slate-600 shrink-0">
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-panacea-600 hover:bg-panacea-700 text-white font-bold shadow-sm shadow-panacea-600/20 transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export Evidence Package</span>
+          </button>
+          <span className="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700">
             {filteredAuditData.length} of {auditData.length} Controls
           </span>
         </div>
@@ -388,6 +397,17 @@ export const ConsultantAuditView: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Bulk Evidence Package Export Security Modal */}
+      <EvidenceExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        processId={processId}
+        serviceId={serviceId}
+        customerId={customerId}
+        processName={`Process #${processId.slice(-6)}`}
+        serviceName={`Compliance Service #${serviceId}`}
+      />
     </div>
   );
 };

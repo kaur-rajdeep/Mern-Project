@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ShieldCheck, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { LogoutConfirmModal } from '../common/LogoutConfirmModal';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -10,6 +11,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const getRoleTitle = (type?: number) => {
     switch (type) {
@@ -26,13 +28,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
     }
   };
 
-  const handleLogout = () => {
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
     logout();
     navigate('/login');
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 text-slate-800">
+    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 text-slate-800">
       <div className="px-4 lg:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
@@ -74,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           </Link>
 
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
             title="Sign Out"
           >
@@ -82,6 +85,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           </button>
         </div>
       </div>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+        userName={user?.fullName}
+      />
     </header>
   );
 };

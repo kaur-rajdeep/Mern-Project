@@ -3,7 +3,18 @@ const path = require('path');
 const ExcelJS = require('exceljs');
 
 async function generateTestCasesExcel() {
-  const mdPath = path.resolve(__dirname, '../../COMPREHENSIVE_SYSTEM_TEST_CASES.md');
+  const candidatePaths = [
+    path.resolve(__dirname, '../COMPREHENSIVE_SYSTEM_TEST_CASES.md'),
+    path.resolve(__dirname, '../../COMPREHENSIVE_SYSTEM_TEST_CASES.md'),
+    path.resolve(__dirname, '../../../COMPREHENSIVE_SYSTEM_TEST_CASES.md'),
+    path.resolve('c:/xampp/htdocs/public_html2/COMPREHENSIVE_SYSTEM_TEST_CASES.md')
+  ];
+
+  let mdPath = candidatePaths.find(p => fs.existsSync(p));
+  if (!mdPath) {
+    throw new Error('COMPREHENSIVE_SYSTEM_TEST_CASES.md not found in candidate paths');
+  }
+
   const mdContent = fs.readFileSync(mdPath, 'utf8');
 
   // Parse Markdown Tables

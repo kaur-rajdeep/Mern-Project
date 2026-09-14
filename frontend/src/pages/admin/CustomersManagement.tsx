@@ -14,6 +14,25 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import {
+  validateFullName,
+  validateEmail,
+  validatePhone,
+  validateCompanyName,
+  validateAdminPassword,
+} from '../../utils/validators';
+import { useFormDraft } from '../../hooks/useFormDraft';
+import { useNavigationGuard } from '../../hooks/useNavigationGuard';
+import { NavigationGuardModal } from '../../components/common/NavigationGuardModal';
+
+// Reusable inline field error
+const FieldError: React.FC<{ message: string }> = ({ message }) =>
+  message ? (
+    <p className="mt-1 flex items-center gap-1 text-[11px] text-rose-600 font-medium">
+      <AlertCircle className="w-3 h-3 shrink-0" />
+      {message}
+    </p>
+  ) : null;
 
 export const CustomersManagement: React.FC = () => {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -43,6 +62,61 @@ export const CustomersManagement: React.FC = () => {
   const [processes, setProcesses] = useState<any[]>([]);
   const [newProcessName, setNewProcessName] = useState('');
 
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    companyName: '',
+    password: '',
+  });
+
+  // localStorage draft for the create-customer modal
+  const { getDraft, saveDraft, clearDraft, hasDraft } = useFormDraft<typeof formData>('createCustomer');
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const validateForm = () => {
+    const errors = {
+      fullName: validateFullName(formData.fullName),
+      email: validateEmail(formData.email),
+      phoneNumber: validatePhone(formData.phoneNumber),
+      companyName: validateCompanyName(formData.companyName),
+      password: validateAdminPassword(formData.password),
+    };
+    setFormErrors(errors);
+    return !Object.values(errors).some(Boolean);
+  };
+
+  // Navigation guard — block page nav when modal is open with unsaved data
+  const formHasData = createModalOpen && (
+    formData.fullName.trim() !== '' ||
+    formData.email.trim() !== '' ||
+    formData.phoneNumber.trim() !== '' ||
+    formData.companyName.trim() !== '' ||
+    formData.companyNumber.trim() !== '' ||
+    formData.address.trim() !== '' ||
+    formData.password.trim() !== ''
+  );
+
+  const { isGuardOpen, confirmNavigation, cancelNavigation, proceedNavigation } = useNavigationGuard({
+    isDirty: formHasData,
+    onDiscard: () => {
+      clearDraft();
+      setCreateModalOpen(false);
+      setFormData({ fullName: '', email: '', phoneNumber: '', companyName: '', companyNumber: '', address: '', password: '' });
+      setFormErrors({ fullName: '', email: '', phoneNumber: '', companyName: '', password: '' });
+      setDraftRestored(false);
+      toast.info('Draft discarded and cleared from local storage.');
+    },
+  });
+
+  const handleSaveDraftAndLeave = () => {
+    saveDraft(formData);
+    toast.success('Customer details saved as draft in local storage.', { duration: 4000 });
+    setCreateModalOpen(false);
+    proceedNavigation();
+  };
+
   const fetchCustomers = () => {
     setIsLoading(true);
     api
@@ -56,12 +130,36 @@ export const CustomersManagement: React.FC = () => {
     fetchCustomers();
   }, []);
 
+  // Restore draft when the create modal opens
+  useEffect(() => {
+    if (createModalOpen) {
+      if (hasDraft()) {
+        const draft = getDraft();
+        if (draft) {
+          setFormData(draft);
+          setDraftRestored(true);
+          toast.info('Draft restored — your previously entered details have been loaded.', { duration: 4000 });
+        }
+      } else {
+        setDraftRestored(false);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createModalOpen]);
+
+
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+      toast.error('Please fix the form errors before submitting.');
+      return;
+    }
     try {
       const res = await api.post('/admin/customers', formData);
       if (res.data.success) {
         toast.success('Customer created successfully.');
+        clearDraft(); // Remove saved draft on success
         setCreateModalOpen(false);
         setFormData({
           fullName: '',
@@ -72,11 +170,18 @@ export const CustomersManagement: React.FC = () => {
           address: '',
           password: '',
         });
+        setFormErrors({ fullName: '', email: '', phoneNumber: '', companyName: '', password: '' });
+        setDraftRestored(false);
         fetchCustomers();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create customer.');
     }
+  };
+
+  const handleCloseCreateModal = () => {
+    // Keep the draft in localStorage so it can be restored next time
+    setCreateModalOpen(false);
   };
 
   const handleRevealPassword = async (e: React.FormEvent) => {
@@ -228,16 +333,24 @@ export const CustomersManagement: React.FC = () => {
 
       {/* Create Customer Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900">Add Customer Organization</h3>
-              <button onClick={() => setCreateModalOpen(false)}>
+              <button onClick={handleCloseCreateModal}>
                 <X className="w-5 h-5 text-slate-400 hover:text-slate-600" />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
+            {/* Draft restored banner */}
+            {draftRestored && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                <span>📋</span>
+                <span>Draft restored from your last session. <button type="button" onClick={() => { clearDraft(); setFormData({ fullName: '', email: '', phoneNumber: '', companyName: '', companyNumber: '', address: '', password: '' }); setDraftRestored(false); }} className="underline underline-offset-2 hover:text-amber-900">Clear draft</button></span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreate} className="space-y-3 text-xs" noValidate>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700">Company / Organization Name</label>
@@ -245,9 +358,15 @@ export const CustomersManagement: React.FC = () => {
                     type="text"
                     required
                     value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                    onChange={(e) => {
+                      setFormData({ ...formData, companyName: e.target.value });
+                      setFormErrors((prev) => ({ ...prev, companyName: validateCompanyName(e.target.value) }));
+                    }}
+                    className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                      formErrors.companyName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                    }`}
                   />
+                  <FieldError message={formErrors.companyName} />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700">Company ID / Number</label>
@@ -267,18 +386,34 @@ export const CustomersManagement: React.FC = () => {
                     type="text"
                     required
                     value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                    onChange={(e) => {
+                      setFormData({ ...formData, fullName: e.target.value });
+                      setFormErrors((prev) => ({ ...prev, fullName: validateFullName(e.target.value) }));
+                    }}
+                    className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                      formErrors.fullName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                    }`}
                   />
+                  <FieldError message={formErrors.fullName} />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700">Phone Number</label>
+                  <label className="font-bold text-slate-700">
+                    Phone Number
+                    <span className="ml-1 text-slate-400 font-normal">(optional)</span>
+                  </label>
                   <input
-                    type="text"
+                    type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                    onChange={(e) => {
+                      setFormData({ ...formData, phoneNumber: e.target.value });
+                      setFormErrors((prev) => ({ ...prev, phoneNumber: validatePhone(e.target.value) }));
+                    }}
+                    placeholder="e.g. +91 98765 43210"
+                    className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                      formErrors.phoneNumber ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                    }`}
                   />
+                  <FieldError message={formErrors.phoneNumber} />
                 </div>
               </div>
 
@@ -288,26 +423,38 @@ export const CustomersManagement: React.FC = () => {
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setFormErrors((prev) => ({ ...prev, email: validateEmail(e.target.value) }));
+                  }}
+                  className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                    formErrors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                  }`}
                 />
+                <FieldError message={formErrors.email} />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700">Custom Password (Optional - auto-generated if blank)</label>
+                <label className="font-bold text-slate-700">Custom Password <span className="font-normal text-slate-400">(Optional — auto-generated if blank)</span></label>
                 <input
                   type="text"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    setFormErrors((prev) => ({ ...prev, password: validateAdminPassword(e.target.value) }));
+                  }}
                   placeholder="Auto-generated if left blank"
-                  className="w-full mt-1 p-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  className={`w-full mt-1 p-2 bg-white border rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 ${
+                    formErrors.password ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200'
+                  }`}
                 />
+                <FieldError message={formErrors.password} />
               </div>
 
               <div className="flex justify-end space-x-2 pt-3">
                 <button
                   type="button"
-                  onClick={() => setCreateModalOpen(false)}
+                  onClick={handleCloseCreateModal}
                   className="px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Cancel
@@ -420,6 +567,18 @@ export const CustomersManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Navigation guard — fires when user tries to leave page with the form open */}
+      <NavigationGuardModal
+        isOpen={isGuardOpen}
+        onSave={handleSaveDraftAndLeave}
+        onDiscard={confirmNavigation}
+        onStay={cancelNavigation}
+        saveLabel="Save Draft & Leave"
+        discardLabel="Discard & Clear Draft"
+        title="Unsaved Customer Form"
+        description="You have unsaved details in the customer form. Would you like to save your draft to local storage before leaving, or discard it?"
+      />
     </div>
   );
 };
