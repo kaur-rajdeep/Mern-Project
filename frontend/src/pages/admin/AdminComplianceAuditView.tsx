@@ -56,9 +56,9 @@ export const AdminComplianceAuditView: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  const fetchProjectDetails = async () => {
+  const fetchProjectDetails = async (isInitial = false) => {
     if (!projectId) return;
-    setIsLoading(true);
+    if (isInitial) setIsLoading(true);
     try {
       const res = await api.get(`/admin/compliance-projects/${projectId}/details`);
       if (res.data.success) {
@@ -70,12 +70,12 @@ export const AdminComplianceAuditView: React.FC = () => {
     } catch (err: any) {
       toast.error('Failed to load compliance project details.');
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProjectDetails();
+    fetchProjectDetails(true);
   }, [projectId]);
 
   if (isLoading) {

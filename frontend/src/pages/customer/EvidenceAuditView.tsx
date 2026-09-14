@@ -33,10 +33,11 @@ export const EvidenceAuditView: React.FC = () => {
   // Upload state
   const [uploadFiles, setUploadFiles] = useState<{ [key: string]: FileList | null }>({});
   const [uploadComments, setUploadComments] = useState<{ [key: string]: string }>({});
+  const [fileInputKeys, setFileInputKeys] = useState<{ [key: string]: number }>({});
   const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
 
-  const fetchAuditView = async () => {
-    setIsLoading(true);
+  const fetchAuditView = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const res = await api.get(`/customer/evidence/audit-view?processId=${processId}&serviceId=${serviceId}`);
       if (res.data.success) {
@@ -48,13 +49,13 @@ export const EvidenceAuditView: React.FC = () => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load evidence audit matrix.');
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (processId && serviceId) {
-      fetchAuditView();
+      fetchAuditView(true);
     }
   }, [processId, serviceId]);
 
@@ -89,7 +90,11 @@ export const EvidenceAuditView: React.FC = () => {
         toast.success('Evidence submitted successfully.');
         setUploadFiles((prev) => ({ ...prev, [questionnaireId]: null }));
         setUploadComments((prev) => ({ ...prev, [questionnaireId]: '' }));
-        fetchAuditView();
+        setFileInputKeys((prev) => ({ ...prev, [questionnaireId]: (prev[questionnaireId] || 0) + 1 }));
+        // Ensure this question stays expanded
+        setExpandedId(questionnaireId);
+        // Silent in-place refresh without unmounting or scroll jumping
+        await fetchAuditView(false);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to upload evidence.');
@@ -101,10 +106,10 @@ export const EvidenceAuditView: React.FC = () => {
   const handleDeleteDoc = async (docId: string) => {
     if (!confirm('Are you sure you want to delete this evidence file?')) return;
     try {
-      const res = await api.delete(`/customer/evidence-docs/${docId}`);
+      const res = await api.delete(`/customer/evidence/${docId}`);
       if (res.data.success) {
         toast.success('Document deleted.');
-        fetchAuditView();
+        fetchAuditView(false);
       }
     } catch {
       toast.error('Failed to delete document.');
@@ -120,7 +125,7 @@ export const EvidenceAuditView: React.FC = () => {
       });
       if (res.data.success) {
         toast.success('Modification requested from Administrator.');
-        fetchAuditView();
+        fetchAuditView(false);
       }
     } catch {
       toast.error('Failed to submit modification request.');
@@ -291,6 +296,7 @@ export const EvidenceAuditView: React.FC = () => {
                             Choose Files
                           </label>
                           <input
+                            key={fileInputKeys[q._id] || 0}
                             type="file"
                             multiple
                             onChange={(e) =>
@@ -332,8 +338,17 @@ export const EvidenceAuditView: React.FC = () => {
                           onClick={() => handleFileUploadSubmit(q._id)}
                           className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-xl shadow-xs transition disabled:opacity-50 flex items-center space-x-1.5"
                         >
-                          <Upload className="w-3.5 h-3.5 text-white" />
-                          <span>{isUploading[q._id] ? 'Uploading...' : 'Submit Evidence'}</span>
+                          {isUploading[q._id] ? (
+                            <>
+                              <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin shrink-0" />
+                              <span>Uploading Evidence...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3.5 h-3.5 text-white" />
+                              <span>Submit Evidence</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>

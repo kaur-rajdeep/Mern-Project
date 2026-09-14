@@ -32,10 +32,11 @@ export const ConsultantAuditView: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [uploadFiles, setUploadFiles] = useState<{ [key: string]: FileList | null }>({});
+  const [fileInputKeys, setFileInputKeys] = useState<{ [key: string]: number }>({});
   const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
 
-  const fetchAuditData = async () => {
-    setIsLoading(true);
+  const fetchAuditData = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const res = await api.get(
         `/consultant/audit-view?processId=${processId}&serviceId=${serviceId}&customerId=${customerId}`
@@ -49,13 +50,13 @@ export const ConsultantAuditView: React.FC = () => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load consultation matrix.');
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (processId && serviceId && customerId) {
-      fetchAuditData();
+      fetchAuditData(true);
     }
   }, [processId, serviceId, customerId]);
 
@@ -70,7 +71,7 @@ export const ConsultantAuditView: React.FC = () => {
       });
       if (res.data.success) {
         toast.success('Consultant advisory status updated.');
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch {
       toast.error('Failed to update status.');
@@ -103,7 +104,9 @@ export const ConsultantAuditView: React.FC = () => {
       if (res.data.success) {
         toast.success('Advisory paper uploaded.');
         setUploadFiles((prev) => ({ ...prev, [questionnaireId]: null }));
-        fetchAuditData();
+        setFileInputKeys((prev) => ({ ...prev, [questionnaireId]: (prev[questionnaireId] || 0) + 1 }));
+        setExpandedId(questionnaireId);
+        await fetchAuditData(false);
       }
     } catch {
       toast.error('Failed to upload file.');
@@ -118,7 +121,7 @@ export const ConsultantAuditView: React.FC = () => {
       const res = await api.delete(`/consultant/supplementary-docs/${docId}`);
       if (res.data.success) {
         toast.success('Document deleted.');
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch {
       toast.error('Failed to delete.');

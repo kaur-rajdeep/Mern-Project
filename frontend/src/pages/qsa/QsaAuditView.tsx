@@ -33,10 +33,11 @@ export const QsaAuditView: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [uploadFiles, setUploadFiles] = useState<{ [key: string]: FileList | null }>({});
+  const [fileInputKeys, setFileInputKeys] = useState<{ [key: string]: number }>({});
   const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
 
-  const fetchAuditData = async () => {
-    setIsLoading(true);
+  const fetchAuditData = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const res = await api.get(
         `/qsa/audit-view?processId=${processId}&serviceId=${serviceId}&customerId=${customerId}`
@@ -50,13 +51,13 @@ export const QsaAuditView: React.FC = () => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load audit controls.');
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (processId && serviceId && customerId) {
-      fetchAuditData();
+      fetchAuditData(true);
     }
   }, [processId, serviceId, customerId]);
 
@@ -71,7 +72,7 @@ export const QsaAuditView: React.FC = () => {
       });
       if (res.data.success) {
         toast.success(res.data.message || 'Status updated successfully.');
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update status.');
@@ -104,7 +105,9 @@ export const QsaAuditView: React.FC = () => {
       if (res.data.success) {
         toast.success('QSA documents uploaded.');
         setUploadFiles((prev) => ({ ...prev, [questionnaireId]: null }));
-        fetchAuditData();
+        setFileInputKeys((prev) => ({ ...prev, [questionnaireId]: (prev[questionnaireId] || 0) + 1 }));
+        setExpandedId(questionnaireId);
+        await fetchAuditData(false);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to upload files.');
@@ -127,7 +130,7 @@ export const QsaAuditView: React.FC = () => {
             ),
           }))
         );
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete working paper.');
@@ -144,7 +147,7 @@ export const QsaAuditView: React.FC = () => {
       });
       if (res.data.success) {
         toast.success(res.data.message || 'Scope modification requested from Administrator.');
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to submit request.');

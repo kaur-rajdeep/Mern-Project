@@ -34,8 +34,8 @@ export const QaAuditView: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  const fetchAuditData = async () => {
-    setIsLoading(true);
+  const fetchAuditData = async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
     try {
       const res = await api.get(
         `/qa/audit-view?processId=${processId}&serviceId=${serviceId}&customerId=${customerId}`
@@ -49,13 +49,13 @@ export const QaAuditView: React.FC = () => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to load QA matrix.');
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (processId && serviceId && customerId) {
-      fetchAuditData();
+      fetchAuditData(true);
     }
   }, [processId, serviceId, customerId]);
 
@@ -70,7 +70,7 @@ export const QaAuditView: React.FC = () => {
       });
       if (res.data.success) {
         toast.success(res.data.message);
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch {
       toast.error('Failed to update QA status.');
@@ -94,7 +94,7 @@ export const QaAuditView: React.FC = () => {
       if (res.data.success) {
         toast.success(`Batch QA status updated for ${selectedIds.length} items.`);
         setSelectedIds([]);
-        fetchAuditData();
+        fetchAuditData(false);
       }
     } catch {
       toast.error('Failed to execute bulk update.');
