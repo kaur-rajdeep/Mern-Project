@@ -156,13 +156,13 @@ export const AdminComplianceAuditView: React.FC = () => {
   }).length;
 
   const filterTabs = [
-    { key: 'all', label: 'All Controls', count: questionnaires.length },
-    { key: 'pending', label: 'Pending Submission', count: pendingCount },
+    { key: 'all', label: 'All ', count: questionnaires.length },
+    { key: 'pending', label: 'Pending', count: pendingCount },
     { key: 'qsa_approved', label: 'QSA Approved', count: qsaApprovedCount },
     { key: 'qa_approved', label: 'QA Approved', count: qaApprovedCount },
-    { key: 'mod_requested', label: 'Modification Requested', count: modRequestedCount },
+    { key: 'mod_requested', label: 'Modification', count: modRequestedCount },
     { key: 'in_progress', label: 'In Progress', count: inProgressCount },
-    { key: 'disapproved', label: 'Disapproved / Incomplete', count: disapprovedCount },
+    { key: 'disapproved', label: 'Disapproved', count: disapprovedCount },
   ];
 
   const filteredQuestionnaires = questionnaires.filter((q) => {
@@ -376,126 +376,124 @@ export const AdminComplianceAuditView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Header with Immediate Action Buttons (Pinned Sticky on Top) */}
-      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-30 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 transition-all">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div className="flex items-center space-x-3">
+    <div className="space-y-5 pb-12">
+      {/* Top Header — Pinned Sticky */}
+      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-30 bg-white rounded-2xl border border-slate-200 shadow-xs transition-all">
+        <div className="px-5 py-4 flex flex-col lg:flex-row justify-between gap-4">
+          {/* Left: Back + Title Block */}
+          <div className="flex items-start space-x-3 min-w-0">
             <button
               onClick={() => navigate('/admin/compliances')}
-              className="p-2 hover:bg-slate-100 rounded-xl transition text-slate-500 hover:text-slate-800"
+              className="mt-1 p-1.5 hover:bg-slate-100 rounded-lg transition text-slate-400 hover:text-slate-800 shrink-0"
               title="Back to Compliances"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-500" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider">
-                  {service?.serviceName || 'Compliance Standard'}
-                </span>
-                <h1 className="text-xl font-black text-slate-900">Project Audit & Review Workspace</h1>
-              </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="text-lg font-black text-slate-900 leading-tight">Audit & Review Workspace</h1>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>
-                  Customer: <strong className="text-slate-800">{project.customerId?.companyName || project.customerId?.fullName}</strong>
+                  Customer: <strong className="text-slate-700">{project.customerId?.companyName || project.customerId?.fullName || '—'}</strong>
                 </span>
-                <span>•</span>
+                <span className="text-slate-300">·</span>
                 <span>
-                  Scope: <strong className="text-slate-800">{project.processId?.processName}</strong>
+                  Scope: <strong className="text-slate-700">{project.processId?.processName || '—'}</strong>
                 </span>
               </p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-white uppercase tracking-wider">
+                  {service?.serviceName || 'Compliance Standard'}
+                </span>
+                {project.status === 1 ? (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    ✓ Completed ({approvedQuestionsCount}/{questionnaires.length})
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    In Progress ({approvedQuestionsCount}/{questionnaires.length} Approved)
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Quick Header Action Bar */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap lg:flex-nowrap">
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="px-3.5 py-2 bg-panacea-600 hover:bg-panacea-700 text-white font-bold rounded-xl text-xs shadow-sm shadow-panacea-600/20 flex items-center space-x-1.5 transition"
+              className="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition shadow-xs"
             >
-              <FileDown className="w-4 h-4 text-white" />
-              <span>Export Evidence Package</span>
+              <FileDown className="w-3.5 h-3.5" />
+              <span>Export Evidence</span>
             </button>
             <button
               onClick={() => setAocModalOpen(true)}
-              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs shadow-xs flex items-center space-x-1.5 transition"
+              className="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs flex items-center space-x-1.5 transition shadow-xs"
             >
-              <Award className="w-4 h-4 text-white" />
+              <Award className="w-3.5 h-3.5" />
               <span>{aocReport ? 'Manage AOC' : 'Upload AOC'}</span>
             </button>
             <button
               onClick={() => setRocModalOpen(true)}
-              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold rounded-xl text-xs flex items-center space-x-1.5 transition"
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold rounded-xl text-xs flex items-center space-x-1.5 transition"
             >
-              <FileCheck className="w-4 h-4 text-slate-600" />
+              <FileCheck className="w-3.5 h-3.5 text-slate-500" />
               <span>{rocReport ? 'Manage ROC' : 'Upload ROC'}</span>
             </button>
-            <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
-            <div className="px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 flex items-center space-x-1.5">
-              <span className="text-slate-400">Status:</span>
-              {project.status === 1 ? (
-                <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  Completed ({approvedQuestionsCount}/{questionnaires.length})
-                </span>
-              ) : (
-                <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                  In Progress ({approvedQuestionsCount}/{questionnaires.length} Approved)
-                </span>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Questionnaire list (150 questions) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column: Questionnaire list */}
         <div className="lg:col-span-8 space-y-4">
-          {/* Status Filter Tabs */}
-          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 text-xs font-semibold">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setSelectedFilter(tab.key)}
-                className={`px-3.5 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${
-                  selectedFilter === tab.key
-                    ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
-                    : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
-                    selectedFilter === tab.key
-                      ? 'bg-sky-200/60 text-sky-800'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
+          {/* Status Filter Tabs + Select All — combined in one card */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+            {/* Filter Tabs */}
+            <div className="px-4 pt-3 pb-2.5 flex flex-wrap gap-1 text-[11px] font-semibold border-b border-slate-100">
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedFilter(tab.key)}
+                  className={`px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 whitespace-nowrap ${selectedFilter === tab.key
+                    ? 'bg-sky-50 text-sky-700 font-bold border border-sky-200'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    }`}
                 >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Action Bar for Questions */}
-          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 text-xs">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="selectAllQuestions"
-                checked={selectedQuestions.length === filteredQuestionnaires.length && filteredQuestionnaires.length > 0}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-              />
-              <label htmlFor="selectAllQuestions" className="font-bold text-slate-700 cursor-pointer">
-                Select All Questions ({filteredQuestionnaires.length} of {questionnaires.length})
-              </label>
+                  <span>{tab.label}</span>
+                  <span
+                    className={`px-1 py-0.5 rounded text-[9px] font-bold leading-none ${selectedFilter === tab.key
+                      ? 'bg-sky-200/60 text-sky-800'
+                      : 'bg-slate-100 text-slate-400'
+                      }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
             </div>
-            {selectedQuestions.length > 0 && (
-              <span className="font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
-                {selectedQuestions.length} Selected
-              </span>
-            )}
+
+            {/* Select All Bar */}
+            <div className="px-4 py-2.5 flex justify-between items-center text-xs bg-slate-50/50">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="selectAllQuestions"
+                  checked={selectedQuestions.length === filteredQuestionnaires.length && filteredQuestionnaires.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                />
+                <label htmlFor="selectAllQuestions" className="font-semibold text-slate-600 cursor-pointer">
+                  Select All Questions ({filteredQuestionnaires.length} of {questionnaires.length})
+                </label>
+              </div>
+              {selectedQuestions.length > 0 && (
+                <span className="font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg">
+                  {selectedQuestions.length} Selected
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Questionnaires List */}
@@ -516,9 +514,8 @@ export const AdminComplianceAuditView: React.FC = () => {
               return (
                 <div
                   key={q._id}
-                  className={`bg-white rounded-2xl border transition shadow-2xs overflow-hidden ${
-                    isSelected ? 'border-slate-400 ring-1 ring-slate-400' : 'border-slate-200'
-                  }`}
+                  className={`bg-white rounded-2xl border transition shadow-2xs overflow-hidden ${isSelected ? 'border-slate-400 ring-1 ring-slate-400' : 'border-slate-200'
+                    }`}
                 >
                   {/* Header */}
                   <div className="p-4 bg-slate-50/60 border-b border-slate-100 flex items-start gap-3">
@@ -537,137 +534,137 @@ export const AdminComplianceAuditView: React.FC = () => {
                           {statusInfo.label}
                         </span>
                       </div>
-                    <p className="text-xs font-bold text-slate-800 mt-1 whitespace-pre-line leading-relaxed">
-                      {q.question}
-                    </p>
+                      <p className="text-xs font-bold text-slate-800 mt-1 whitespace-pre-line leading-relaxed">
+                        {q.question}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => toggleQuestion(q._id)}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 p-1"
+                    >
+                      {isExpanded ? 'Collapse' : 'Expand'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => toggleQuestion(q._id)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 p-1"
-                  >
-                    {isExpanded ? 'Collapse' : 'Expand'}
-                  </button>
-                </div>
 
-                {/* Expanded Details */}
-                {isExpanded && (
-                  <div className="p-4 space-y-4 text-xs">
-                    {/* Uploaded Evidence Documents */}
-                    <div>
-                      <h4 className="font-bold text-slate-700 flex items-center space-x-1.5 mb-2">
-                        <FileText className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Uploaded Evidence Files ({docs.length})</span>
-                      </h4>
-                      {docs.length === 0 ? (
-                        <p className="text-slate-400 italic py-2">No evidence document submitted yet.</p>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {docs.map((doc, dIdx) => (
-                            <div
-                              key={dIdx}
-                              className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between"
-                            >
-                              <div className="flex items-center space-x-2 truncate">
-                                <FileDown className="w-4 h-4 text-slate-500 shrink-0" />
-                                <div className="truncate">
-                                  <a
-                                    href={`/api/files/download?path=evidence/${doc.docs}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    download
-                                    className="font-bold text-slate-800 hover:text-slate-900 truncate block"
-                                    title={doc.docs}
-                                  >
-                                    {doc.docs}
-                                  </a>
-                                  <p className="text-[10px] text-slate-400">
-                                    {doc.updatedDate || doc.createdAt ? new Date(doc.updatedDate || doc.createdAt).toLocaleString() : ''}
-                                  </p>
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="p-4 space-y-4 text-xs">
+                      {/* Uploaded Evidence Documents */}
+                      <div>
+                        <h4 className="font-bold text-slate-700 flex items-center space-x-1.5 mb-2">
+                          <FileText className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Uploaded Evidence Files ({docs.length})</span>
+                        </h4>
+                        {docs.length === 0 ? (
+                          <p className="text-slate-400 italic py-2">No evidence document submitted yet.</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {docs.map((doc, dIdx) => (
+                              <div
+                                key={dIdx}
+                                className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between"
+                              >
+                                <div className="flex items-center space-x-2 truncate">
+                                  <FileDown className="w-4 h-4 text-slate-500 shrink-0" />
+                                  <div className="truncate">
+                                    <a
+                                      href={`/api/files/download?path=evidence/${doc.docs}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      download
+                                      className="font-bold text-slate-800 hover:text-slate-900 truncate block"
+                                      title={doc.docs}
+                                    >
+                                      {doc.docs}
+                                    </a>
+                                    <p className="text-[10px] text-slate-400">
+                                      {doc.updatedDate || doc.createdAt ? new Date(doc.updatedDate || doc.createdAt).toLocaleString() : ''}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* QA Modification Request Card */}
+                      {rev?.qaModification === 1 && rev?.adminQa === 0 && (
+                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div className="flex items-center space-x-2">
+                            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span className="font-bold text-amber-900">Modification Request from QA Assessor</span>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleQaModification(q._id, 1)}
+                              className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => handleQaModification(q._id, 2)}
+                              className="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 transition"
+                            >
+                              Reject
+                            </button>
+                          </div>
                         </div>
                       )}
-                    </div>
 
-                    {/* QA Modification Request Card */}
-                    {rev?.qaModification === 1 && rev?.adminQa === 0 && (
-                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div className="flex items-center space-x-2">
-                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                          <span className="font-bold text-amber-900">Modification Request from QA Assessor</span>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleQaModification(q._id, 1)}
-                            className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleQaModification(q._id, 2)}
-                            className="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 transition"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Customer Modification Request Card */}
-                    {rev?.cusModification === 1 && (!rev?.adminCustomer || rev?.adminCustomer === 0) && (
-                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div className="flex items-center space-x-2">
-                          <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
-                          <span className="font-bold text-blue-900">Requirement Modification Request from Customer</span>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleCustomerModification(q._id, 1)}
-                            className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleCustomerModification(q._id, 2)}
-                            className="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 transition"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Discussion Comments Thread */}
-                    <div>
-                      <h4 className="font-bold text-slate-700 flex items-center space-x-1.5 mb-2">
-                        <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Auditor / Customer Discussion Thread ({qComments.length})</span>
-                      </h4>
-                      {qComments.length === 0 ? (
-                        <p className="text-slate-400 italic">No comments posted yet.</p>
-                      ) : (
-                        <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-40 overflow-y-auto">
-                          {qComments.map((c, cIdx) => (
-                            <div key={cIdx} className="text-xs">
-                              <span className="font-bold text-slate-800">
-                                {c.loginUserId?.fullName || 'Assessor'}:
-                              </span>{' '}
-                              <span className="text-slate-600">{c.comments}</span>
-                              <span className="text-[10px] text-slate-400 ml-1">
-                                ({new Date(c.updatedDate || c.createdAt).toLocaleString()})
-                              </span>
-                            </div>
-                          ))}
+                      {/* Customer Modification Request Card */}
+                      {rev?.cusModification === 1 && (!rev?.adminCustomer || rev?.adminCustomer === 0) && (
+                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div className="flex items-center space-x-2">
+                            <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                            <span className="font-bold text-blue-900">Requirement Modification Request from Customer</span>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleCustomerModification(q._id, 1)}
+                              className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => handleCustomerModification(q._id, 2)}
+                              className="px-3 py-1 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 transition"
+                            >
+                              Reject
+                            </button>
+                          </div>
                         </div>
                       )}
+
+                      {/* Discussion Comments Thread */}
+                      <div>
+                        <h4 className="font-bold text-slate-700 flex items-center space-x-1.5 mb-2">
+                          <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Auditor / Customer Discussion Thread ({qComments.length})</span>
+                        </h4>
+                        {qComments.length === 0 ? (
+                          <p className="text-slate-400 italic">No comments posted yet.</p>
+                        ) : (
+                          <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-40 overflow-y-auto">
+                            {qComments.map((c, cIdx) => (
+                              <div key={cIdx} className="text-xs">
+                                <span className="font-bold text-slate-800">
+                                  {c.loginUserId?.fullName || 'Assessor'}:
+                                </span>{' '}
+                                <span className="text-slate-600">{c.comments}</span>
+                                <span className="text-[10px] text-slate-400 ml-1">
+                                  ({new Date(c.updatedDate || c.createdAt).toLocaleString()})
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            );
-          }))}
+                  )}
+                </div>
+              );
+            }))}
         </div>
 
         {/* Right Column: Sticky Tabbed Quick Action Hub */}
@@ -676,33 +673,30 @@ export const AdminComplianceAuditView: React.FC = () => {
           <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-2xs flex text-xs font-semibold">
             <button
               onClick={() => setSidebarTab('reports')}
-              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 ${
-                sidebarTab === 'reports'
-                  ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
-                  : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
-              }`}
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 ${sidebarTab === 'reports'
+                ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
+                : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
+                }`}
             >
               <Award className="w-3.5 h-3.5" />
               <span>AOC & ROC</span>
             </button>
             <button
               onClick={() => setSidebarTab('actions')}
-              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 ${
-                sidebarTab === 'actions'
-                  ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
-                  : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
-              }`}
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 ${sidebarTab === 'actions'
+                ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
+                : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
+                }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Review ({selectedQuestions.length})</span>
             </button>
             <button
               onClick={() => setSidebarTab('milestone')}
-              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 ${
-                sidebarTab === 'milestone'
-                  ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
-                  : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
-              }`}
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1.5 ${sidebarTab === 'milestone'
+                ? 'bg-sky-50 text-sky-600 font-bold border border-sky-200 shadow-2xs'
+                : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50/50'
+                }`}
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>Milestone</span>

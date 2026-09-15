@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "seed": "ts-node src/scripts/migrate-from-mysql.ts",
+    "seed:fresh": "ts-node src/scripts/seed-fresh.ts",
     "test": "jest",
     "test:e2e": "node runAllSystemTests.js"
   },

@@ -1,0 +1,60 @@
+[{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a8d"
+  },
+  "legacyId": 1,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.722Z"
+  },
+  "roleName": "Administrator",
+  "status": "active",
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.598Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a8e"
+  },
+  "legacyId": 2,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.788Z"
+  },
+  "roleName": "Employee",
+  "status": "active",
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.623Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a8f"
+  },
+  "legacyId": 3,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.791Z"
+  },
+  "roleName": "Supplier",
+  "status": "active",
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.634Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a90"
+  },
+  "legacyId": 4,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.793Z"
+  },
+  "roleName": "Sub-contractors",
+  "status": "active",
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.641Z"
+  }
+}]

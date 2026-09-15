@@ -4,6 +4,7 @@ import {
   Plus,
   Download,
   Eye,
+  Key,
   Trash2,
   Edit,
   Layers,
@@ -40,7 +41,7 @@ export const CustomersManagement: React.FC = () => {
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [revealModalOpen, setRevealModalOpen] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
   const [processModalOpen, setProcessModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
@@ -56,7 +57,8 @@ export const CustomersManagement: React.FC = () => {
   });
 
   const [adminPassword, setAdminPassword] = useState('');
-  const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<string | null>(null);
+  const [sendEmailOnReset, setSendEmailOnReset] = useState(false);
 
   // Processes state
   const [processes, setProcesses] = useState<any[]>([]);
@@ -184,18 +186,20 @@ export const CustomersManagement: React.FC = () => {
     setCreateModalOpen(false);
   };
 
-  const handleRevealPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminPassword || !selectedCustomer) return;
     try {
-      const res = await api.post(`/admin/users/${selectedCustomer._id}/reveal-password`, {
+      const res = await api.post(`/admin/users/${selectedCustomer._id}/reset-password`, {
         adminPassword,
+        sendEmail: sendEmailOnReset,
       });
       if (res.data.success) {
-        setRevealedPassword(res.data.password);
+        setResetPasswordResult(res.data.password);
+        toast.success(sendEmailOnReset ? 'Password reset and emailed.' : 'Password reset successfully.');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid Admin password.');
+      toast.error(error.response?.data?.message || 'Invalid Admin password or failed to reset.');
     }
   };
 
@@ -313,14 +317,15 @@ export const CustomersManagement: React.FC = () => {
                       <button
                         onClick={() => {
                           setSelectedCustomer(c);
-                          setRevealedPassword(null);
+                          setResetPasswordResult(null);
                           setAdminPassword('');
-                          setRevealModalOpen(true);
+                          setSendEmailOnReset(false);
+                          setResetModalOpen(true);
                         }}
-                        title="Reveal Password"
+                        title="Reset Password"
                         className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
                       >
-                        <Eye className="w-4 h-4 text-slate-500" />
+                        <Key className="w-4 h-4 text-slate-500" />
                       </button>
                     </td>
                   </tr>
@@ -471,38 +476,71 @@ export const CustomersManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Reveal Password Modal */}
-      {revealModalOpen && (
+      {/* Reset Password Modal */}
+      {resetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-sm w-full p-6 space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900">Security Verification</h3>
-              <button onClick={() => setRevealModalOpen(false)}>
+              <button onClick={() => setResetModalOpen(false)}>
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
 
-            {revealedPassword ? (
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center space-y-2">
-                <p className="text-xs text-slate-500">Plaintext User Password:</p>
-                <p className="text-lg font-mono font-bold text-slate-900 select-all">{revealedPassword}</p>
+            {resetPasswordResult ? (
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center space-y-3">
+                <p className="text-xs text-slate-500">New Temporary Password:</p>
+                <p className="text-lg font-mono font-bold text-slate-900 select-all p-2 bg-white rounded border border-slate-200">
+                  {resetPasswordResult}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(resetPasswordResult);
+                    toast.success('Password copied to clipboard');
+                  }}
+                  className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-xl text-xs transition"
+                >
+                  Copy to Clipboard
+                </button>
               </div>
             ) : (
-              <form onSubmit={handleRevealPassword} className="space-y-3 text-xs">
-                <p className="text-slate-600">Enter your Super Admin password to reveal user credentials:</p>
-                <input
-                  type="password"
-                  required
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Super Admin Password"
-                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
-                />
+              <form onSubmit={handleResetPassword} className="space-y-4 text-xs">
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700">
+                  <p className="font-semibold mb-1">Reset User Password</p>
+                  <p className="text-[11px]">This will immediately invalidate their current password. They will need the new one to log in.</p>
+                </div>
+                
+                <div>
+                  <p className="text-slate-600 mb-1">Enter your Super Admin password to confirm:</p>
+                  <input
+                    type="password"
+                    required
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="Super Admin Password"
+                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 p-1">
+                  <input
+                    type="checkbox"
+                    id="sendEmail"
+                    checked={sendEmailOnReset}
+                    onChange={(e) => setSendEmailOnReset(e.target.checked)}
+                    className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                  />
+                  <label htmlFor="sendEmail" className="text-slate-600 font-medium cursor-pointer">
+                    Send new password via email
+                  </label>
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl shadow-xs"
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow-xs transition"
                 >
-                  Verify & Reveal
+                  Reset Password
                 </button>
               </form>
             )}

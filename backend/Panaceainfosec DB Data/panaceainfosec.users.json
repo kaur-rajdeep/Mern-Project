@@ -1,0 +1,12 @@
+{
+    "email": "panacea@yopmail.com",
+    "passwordHash": "$2a$10$WcPyV1GGLRaJWb.TLZkuxexN5oWRqoQpg2VIDotfTLWwCIghkBnjS",
+    "fullName": "Admin Updated",
+    "userType": 1,
+    "status": "active",
+    "phoneNumber": "5435345345",
+    "companyName": "",
+    "address": "",
+    "permissions": "",
+    "isCertificateVerified": 1
+}

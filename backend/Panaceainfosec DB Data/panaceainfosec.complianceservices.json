@@ -1,0 +1,176 @@
+[{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a91"
+  },
+  "legacyId": 1,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.795Z"
+  },
+  "fetchId": 4,
+  "serviceName": "PCI DSS",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.648Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a92"
+  },
+  "legacyId": 2,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.797Z"
+  },
+  "fetchId": 4,
+  "serviceName": "ISO",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.653Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a93"
+  },
+  "legacyId": 3,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.799Z"
+  },
+  "fetchId": 4,
+  "serviceName": "HIPAA",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.657Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a94"
+  },
+  "legacyId": 4,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.800Z"
+  },
+  "fetchId": 4,
+  "serviceName": "HITRUST",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.661Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a95"
+  },
+  "legacyId": 5,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.802Z"
+  },
+  "fetchId": 5,
+  "serviceName": "ASV",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.664Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a96"
+  },
+  "legacyId": 6,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.803Z"
+  },
+  "fetchId": 5,
+  "serviceName": "External PT",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.666Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a97"
+  },
+  "legacyId": 7,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.805Z"
+  },
+  "fetchId": 5,
+  "serviceName": "Internal PT",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.669Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a98"
+  },
+  "legacyId": 8,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.806Z"
+  },
+  "fetchId": 5,
+  "serviceName": "Internal VA",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.671Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a99"
+  },
+  "legacyId": 9,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.807Z"
+  },
+  "fetchId": 5,
+  "serviceName": "Application PT",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.672Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a9a"
+  },
+  "legacyId": 10,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.809Z"
+  },
+  "fetchId": 5,
+  "serviceName": "Segmentation PT",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.674Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6a97f476469b9c0700ff8a9b"
+  },
+  "legacyId": 11,
+  "__v": 0,
+  "createdAt": {
+    "$date": "2026-09-02T10:03:34.810Z"
+  },
+  "fetchId": 5,
+  "serviceName": "Card Data Scan",
+  "status": 1,
+  "updatedAt": {
+    "$date": "2026-09-07T06:26:11.675Z"
+  }
+}]

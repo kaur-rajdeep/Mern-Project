@@ -193,9 +193,9 @@ export class AdminController {
     }
   }
 
-  public async revealUserPassword(req: AuthRequest, res: Response): Promise<void> {
+  public async resetUserPassword(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { adminPassword } = req.body;
+      const { adminPassword, sendEmail } = req.body;
       const { id } = req.params;
       const adminUser = req.user;
 
@@ -216,9 +216,21 @@ export class AdminController {
         return;
       }
 
+      const temporaryPassword = crypto.randomBytes(4).toString('hex');
+      targetUser.passwordHash = await bcrypt.hash(temporaryPassword, 10);
+      targetUser.pwdString = '';
+      targetUser.legacyMd5Hash = '';
+
+      await targetUser.save();
+
+      if (sendEmail) {
+        await mailService.sendPasswordResetMail(targetUser.email, targetUser.fullName, temporaryPassword);
+      }
+
       res.status(200).json({
         success: true,
-        password: targetUser.pwdString || '(No plaintext password stored)',
+        message: 'Password reset successfully.',
+        password: temporaryPassword,
       });
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
