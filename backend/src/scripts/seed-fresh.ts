@@ -38,7 +38,7 @@ const loadJson = (filename: string) => {
 
 async function seedFresh() {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/panacea_compliance';
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/panaceainfosec';
     console.log(`Connecting to MongoDB at ${mongoUri}...`);
     await mongoose.connect(mongoUri);
     console.log('Successfully connected to MongoDB.');
