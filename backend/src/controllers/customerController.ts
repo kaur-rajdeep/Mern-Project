@@ -17,6 +17,7 @@ import {
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
+import { mailService } from '../services/mailService';
 
 export class CustomerController {
   public async getDashboard(req: AuthRequest, res: Response): Promise<void> {
@@ -203,6 +204,52 @@ export class CustomerController {
           comments: comment.trim(),
           loginUserDate: new Date(),
         });
+      }
+
+      // Notify assigned QSA / Consultant of evidence submission
+      if (savedDocs.length > 0) {
+        (async () => {
+          try {
+            const [proj, processObj, serviceObj, qObj] = await Promise.all([
+              ComplianceProject.findOne({ processId, serviceId: numServiceId, customerId })
+                .populate('qsaId', 'fullName email')
+                .populate('consultantId', 'fullName email'),
+              CustomerProcess.findById(processId),
+              ComplianceService.findOne({ legacyId: numServiceId }),
+              Questionnaire.findById(questionnaireId),
+            ]);
+
+            const customerName = user.companyName || user.fullName || 'Customer';
+            const procName = processObj?.processName || 'General Process';
+            const servName = serviceObj?.serviceName || `Service #${numServiceId}`;
+            const controlCode = qObj?.legacyId ? `Requirement #${qObj.legacyId}` : (qObj?.question ? (qObj.question.length > 60 ? qObj.question.substring(0, 60) + '...' : qObj.question) : 'Control Item');
+
+            if (proj?.qsaId && (proj.qsaId as any).email) {
+              await mailService.sendEvidenceSubmissionMail(
+                (proj.qsaId as any).email,
+                (proj.qsaId as any).fullName,
+                customerName,
+                procName,
+                servName,
+                controlCode,
+                savedDocs.length
+              );
+            }
+            if (proj?.consultantId && (proj.consultantId as any).email) {
+              await mailService.sendEvidenceSubmissionMail(
+                (proj.consultantId as any).email,
+                (proj.consultantId as any).fullName,
+                customerName,
+                procName,
+                servName,
+                controlCode,
+                savedDocs.length
+              );
+            }
+          } catch (mailErr) {
+            console.error('Failed to dispatch evidence submission notification:', mailErr);
+          }
+        })();
       }
 
       res.status(200).json({

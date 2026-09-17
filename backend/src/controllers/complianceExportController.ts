@@ -18,6 +18,7 @@ import {
   EvidenceDownloadLog,
 } from '../models';
 import { formatErrorMessage } from '../utils/formatError';
+import { mailService } from '../services/mailService';
 
 const UPLOADS_ROOT = path.resolve(__dirname, '../../../uploads');
 
@@ -432,6 +433,33 @@ export class ComplianceExportController {
         fileCount: includedFileCount + 1, // +1 for Excel matrix
         downloadedAt: new Date(),
       });
+
+      // Dispatch security alert email to system administrators
+      (async () => {
+        try {
+          const roleLabel =
+            user.userType === UserType.ADMIN
+              ? 'Administrator'
+              : user.userType === UserType.QSA
+              ? 'QSA'
+              : user.userType === UserType.QA
+              ? 'QA'
+              : 'Consultant';
+
+          const adminEmail = (global as any).process?.env?.ADMIN_EMAIL || 'mukul@tekshapers.com';
+          await mailService.sendSecurityAlertMail(adminEmail, 'Full Compliance Evidence Package Exported', {
+            requesterName: user.fullName,
+            requesterEmail: user.email,
+            requesterRole: roleLabel,
+            targetCustomer: customer?.companyName || customer?.fullName || 'Customer',
+            processName: process.processName,
+            ipAddress,
+            fileCount: includedFileCount + 1,
+          });
+        } catch (mailErr) {
+          console.error('Failed to dispatch security export alert email:', mailErr);
+        }
+      })();
 
       // Finalize ZIP and stream out
       await archive.finalize();

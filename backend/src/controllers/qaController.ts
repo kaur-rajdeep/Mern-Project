@@ -11,9 +11,11 @@ import {
   EvidenceDocument,
   AssessorDocument,
   AuditComment,
+  CustomerProcess,
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
+import { mailService } from '../services/mailService';
 
 export class QaController {
   public async getDashboard(req: AuthRequest, res: Response): Promise<void> {
@@ -156,6 +158,64 @@ export class QaController {
       review.allStatusDate = new Date();
 
       await review.save();
+
+      // When QA disapproves or marks incomplete: send a SINGLE COMMON EMAIL to Customer, QSA, and Consultant
+      if (numStatus !== 1) {
+        (async () => {
+          try {
+            const [proj, processObj, serviceObj, qObj] = await Promise.all([
+              ComplianceProject.findOne({ processId, serviceId: numServiceId, customerId })
+                .populate('customerId', 'fullName companyName email')
+                .populate('qsaId', 'fullName email')
+                .populate('consultantId', 'fullName email'),
+              CustomerProcess.findById(processId),
+              ComplianceService.findOne({ legacyId: numServiceId }),
+              Questionnaire.findById(questionnaireId),
+            ]);
+
+            const recipients: string[] = [];
+            const recipientNamesList: string[] = [];
+
+            const customerUser = proj?.customerId as any;
+            const qsaUser = proj?.qsaId as any;
+            const consultantUser = proj?.consultantId as any;
+
+            if (customerUser?.email) {
+              recipients.push(customerUser.email);
+              recipientNamesList.push(customerUser.companyName || customerUser.fullName);
+            }
+            if (qsaUser?.email && !recipients.includes(qsaUser.email)) {
+              recipients.push(qsaUser.email);
+              recipientNamesList.push(`${qsaUser.fullName} (QSA)`);
+            }
+            if (consultantUser?.email && !recipients.includes(consultantUser.email)) {
+              recipients.push(consultantUser.email);
+              recipientNamesList.push(`${consultantUser.fullName} (Consultant)`);
+            }
+
+            if (recipients.length > 0) {
+              const procName = processObj?.processName || 'General Process';
+              const servName = serviceObj?.serviceName || `Service #${numServiceId}`;
+              const controlCode = qObj?.legacyId ? `Requirement #${qObj.legacyId}` : (qObj?.question ? (qObj.question.length > 60 ? qObj.question.substring(0, 60) + '...' : qObj.question) : 'Control Item');
+              const statusName = numStatus === 2 ? 'Disapproved by QA' : 'Marked Incomplete by QA';
+
+              await mailService.sendReviewStatusMail(
+                recipients,
+                recipientNamesList.join(', '),
+                procName,
+                servName,
+                controlCode,
+                statusName,
+                'Quality Assurance (QA) Reviewer',
+                req.user?.fullName || 'QA Auditor'
+              );
+            }
+          } catch (mailErr) {
+            console.error('Failed to dispatch QA review status common email:', mailErr);
+          }
+        })();
+      }
+
       res.status(200).json({ success: true, message: 'QA status updated successfully.', review });
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
@@ -209,6 +269,64 @@ export class QaController {
           },
         }));
         await EvidenceReview.bulkWrite(operations);
+      }
+
+      // When QA bulk disapproves or marks incomplete: send a SINGLE COMMON EMAIL to Customer, QSA, and Consultant
+      if (numStatus !== 1 && questionnaireIds && questionnaireIds.length > 0) {
+        (async () => {
+          try {
+            const [proj, processObj, serviceObj, firstQ] = await Promise.all([
+              ComplianceProject.findOne({ processId, serviceId: numServiceId, customerId })
+                .populate('customerId', 'fullName companyName email')
+                .populate('qsaId', 'fullName email')
+                .populate('consultantId', 'fullName email'),
+              CustomerProcess.findById(processId),
+              ComplianceService.findOne({ legacyId: numServiceId }),
+              Questionnaire.findById(questionnaireIds[0]),
+            ]);
+
+            const recipients: string[] = [];
+            const recipientNamesList: string[] = [];
+
+            const customerUser = proj?.customerId as any;
+            const qsaUser = proj?.qsaId as any;
+            const consultantUser = proj?.consultantId as any;
+
+            if (customerUser?.email) {
+              recipients.push(customerUser.email);
+              recipientNamesList.push(customerUser.companyName || customerUser.fullName);
+            }
+            if (qsaUser?.email && !recipients.includes(qsaUser.email)) {
+              recipients.push(qsaUser.email);
+              recipientNamesList.push(`${qsaUser.fullName} (QSA)`);
+            }
+            if (consultantUser?.email && !recipients.includes(consultantUser.email)) {
+              recipients.push(consultantUser.email);
+              recipientNamesList.push(`${consultantUser.fullName} (Consultant)`);
+            }
+
+            if (recipients.length > 0) {
+              const procName = processObj?.processName || 'General Process';
+              const servName = serviceObj?.serviceName || `Service #${numServiceId}`;
+              const controlCode = firstQ?.legacyId ? `Requirement #${firstQ.legacyId}` : (firstQ?.question ? (firstQ.question.length > 60 ? firstQ.question.substring(0, 60) + '...' : firstQ.question) : 'Control Item');
+              const label = questionnaireIds.length > 1 ? `${controlCode} (and ${questionnaireIds.length - 1} other controls)` : controlCode;
+              const statusName = numStatus === 2 ? 'Disapproved by QA' : 'Marked Incomplete by QA';
+
+              await mailService.sendReviewStatusMail(
+                recipients,
+                recipientNamesList.join(', '),
+                procName,
+                servName,
+                label,
+                statusName,
+                'Quality Assurance (QA) Reviewer',
+                req.user?.fullName || 'QA Auditor'
+              );
+            }
+          } catch (mailErr) {
+            console.error('Failed to dispatch QA bulk review status common email:', mailErr);
+          }
+        })();
       }
 
       res.status(200).json({ success: true, message: 'QA batch status updated successfully.' });

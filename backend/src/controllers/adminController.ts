@@ -579,6 +579,76 @@ export class AdminController {
       });
 
       await newProject.save();
+
+      // Trigger Project Assignment emails asynchronously
+      (async () => {
+        try {
+          const [customer, processObj, serviceObj, qsaUser, qaUser, consultantUser] = await Promise.all([
+            User.findById(customerId),
+            CustomerProcess.findById(processId),
+            ComplianceService.findOne({ legacyId: Number(serviceId) }),
+            qsaId ? User.findById(qsaId) : null,
+            qaId ? User.findById(qaId) : null,
+            consultantId ? User.findById(consultantId) : null,
+          ]);
+
+          const clientName = customer?.companyName || customer?.fullName || 'Customer';
+          const processName = processObj?.processName || 'General Process';
+          const serviceName = serviceObj?.serviceName || `Compliance Service #${serviceId}`;
+
+          if (qsaUser?.email) {
+            await mailService.sendProjectAssignmentMail(
+              qsaUser.email,
+              qsaUser.fullName,
+              serviceName,
+              processName,
+              clientName,
+              'Qualified Security Assessor (QSA)',
+              startDate,
+              endDate
+            );
+          }
+          if (qaUser?.email) {
+            await mailService.sendProjectAssignmentMail(
+              qaUser.email,
+              qaUser.fullName,
+              serviceName,
+              processName,
+              clientName,
+              'Quality Assurance (QA) Reviewer',
+              startDate,
+              endDate
+            );
+          }
+          if (consultantUser?.email) {
+            await mailService.sendProjectAssignmentMail(
+              consultantUser.email,
+              consultantUser.fullName,
+              serviceName,
+              processName,
+              clientName,
+              'Security Consultant',
+              startDate,
+              endDate
+            );
+          }
+          if (customer?.email) {
+            await mailService.sendProjectAssignmentMail(
+              customer.email,
+              customer.fullName,
+              serviceName,
+              processName,
+              clientName,
+              'Audited Client Organization',
+              startDate,
+              endDate
+            );
+          }
+        } catch (mailErr) {
+          console.error('Failed to send compliance project assignment emails:', mailErr);
+        }
+      })();
+
       res.status(201).json({ success: true, message: 'Compliance project assigned successfully.', project: newProject });
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
@@ -632,6 +702,76 @@ export class AdminController {
       });
 
       await newProject.save();
+
+      // Trigger Project Assignment emails asynchronously
+      (async () => {
+        try {
+          const [customer, processObj, testingObj, qsaUser, qaUser, consultantUser] = await Promise.all([
+            User.findById(customerId),
+            CustomerProcess.findById(processId),
+            TestingService.findOne({ legacyId: Number(testingId) }),
+            qsaId ? User.findById(qsaId) : null,
+            qaId ? User.findById(qaId) : null,
+            consultantId ? User.findById(consultantId) : null,
+          ]);
+
+          const clientName = customer?.companyName || customer?.fullName || 'Customer';
+          const processName = processObj?.processName || 'General Process';
+          const testingName = testingObj?.testingName || `Testing Service #${testingId}`;
+
+          if (qsaUser?.email) {
+            await mailService.sendProjectAssignmentMail(
+              qsaUser.email,
+              qsaUser.fullName,
+              testingName,
+              processName,
+              clientName,
+              'Assessor / Tester',
+              startDate,
+              endDate
+            );
+          }
+          if (qaUser?.email) {
+            await mailService.sendProjectAssignmentMail(
+              qaUser.email,
+              qaUser.fullName,
+              testingName,
+              processName,
+              clientName,
+              'QA Reviewer',
+              startDate,
+              endDate
+            );
+          }
+          if (consultantUser?.email) {
+            await mailService.sendProjectAssignmentMail(
+              consultantUser.email,
+              consultantUser.fullName,
+              testingName,
+              processName,
+              clientName,
+              'Security Consultant',
+              startDate,
+              endDate
+            );
+          }
+          if (customer?.email) {
+            await mailService.sendProjectAssignmentMail(
+              customer.email,
+              customer.fullName,
+              testingName,
+              processName,
+              clientName,
+              'Audited Client Organization',
+              startDate,
+              endDate
+            );
+          }
+        } catch (mailErr) {
+          console.error('Failed to send testing project assignment emails:', mailErr);
+        }
+      })();
+
       res.status(201).json({ success: true, message: 'Testing project assigned successfully.', project: newProject });
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
@@ -962,6 +1102,30 @@ export class AdminController {
       });
 
       await report.save();
+
+      // Dispatch notification to Customer that report is available
+      (async () => {
+        try {
+          const [customer, serviceObj, processObj] = await Promise.all([
+            User.findById(customerId),
+            ComplianceService.findOne({ legacyId: project.serviceId }),
+            CustomerProcess.findById(processId),
+          ]);
+          if (customer?.email) {
+            await mailService.sendComplianceReportUploadedMail(
+              customer.email,
+              customer.companyName || customer.fullName,
+              type,
+              processObj?.processName || 'General Process',
+              serviceObj?.serviceName || 'Compliance Standard',
+              report.year
+            );
+          }
+        } catch (mailErr) {
+          console.error('Failed to send compliance report uploaded email:', mailErr);
+        }
+      })();
+
       res.status(201).json({ success: true, message: `${type} uploaded successfully.`, report });
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });

@@ -11,9 +11,12 @@ import {
   EvidenceDocument,
   AssessorDocument,
   AuditComment,
+  User,
+  CustomerProcess,
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
+import { mailService } from '../services/mailService';
 
 export class QsaController {
   public async getDashboard(req: AuthRequest, res: Response): Promise<void> {
@@ -193,6 +196,48 @@ export class QsaController {
             loginUserDate: new Date(),
           });
         }
+      }
+
+      // Notify customer if any controls were Disapproved or Marked Incomplete (Strictly NO email if Approved)
+      const nonApprovedUpdates = itemsToUpdate.filter((it) => Number(it.status) === 2 || Number(it.status) === 4);
+      if (nonApprovedUpdates.length > 0) {
+        (async () => {
+          try {
+            const [customer, processObj, serviceObj] = await Promise.all([
+              User.findById(customerId),
+              CustomerProcess.findById(processId),
+              ComplianceService.findOne({ legacyId: numServiceId }),
+            ]);
+
+            if (customer?.email) {
+              const procName = processObj?.processName || 'General Process';
+              const servName = serviceObj?.serviceName || `Service #${numServiceId}`;
+              const firstItem = nonApprovedUpdates[0];
+              const qObj = await Questionnaire.findById(firstItem.questionnaireId);
+              const controlCode = qObj?.legacyId ? `Requirement #${qObj.legacyId}` : (qObj?.question ? (qObj.question.length > 60 ? qObj.question.substring(0, 60) + '...' : qObj.question) : 'Control Item');
+              const statusName = Number(firstItem.status) === 2 ? 'Disapproved by QSA' : 'Marked Incomplete by QSA';
+              const remarks = firstItem.comment || comment || undefined;
+
+              const label = nonApprovedUpdates.length > 1
+                ? `${controlCode} (and ${nonApprovedUpdates.length - 1} other control(s))`
+                : controlCode;
+
+              await mailService.sendReviewStatusMail(
+                customer.email,
+                customer.companyName || customer.fullName,
+                procName,
+                servName,
+                label,
+                statusName,
+                'QSA Assessor',
+                req.user?.fullName || 'QSA Auditor',
+                remarks
+              );
+            }
+          } catch (mailErr) {
+            console.error('Failed to dispatch QSA review status email:', mailErr);
+          }
+        })();
       }
 
       res.status(200).json({ success: true, message: 'Status updated successfully.' });
