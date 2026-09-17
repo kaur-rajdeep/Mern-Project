@@ -58,6 +58,18 @@ export class ConsultantController {
       const { processId, serviceId, customerId } = req.query;
       const numServiceId = Number(serviceId);
 
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        consultantId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
+
       const questionnaires = await Questionnaire.find({ serviceId: numServiceId, status: '1' }).sort({ legacyId: 1 });
 
       const [reviews, customerDocs, assessorDocs, comments] = await Promise.all([
@@ -96,6 +108,18 @@ export class ConsultantController {
       const numStatus = Number(status);
       const numServiceId = Number(serviceId);
 
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        consultantId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
+
       let review = await EvidenceReview.findOne({
         processId,
         serviceId: numServiceId,
@@ -130,17 +154,35 @@ export class ConsultantController {
       const numStatus = Number(status);
       const numServiceId = Number(serviceId);
 
-      for (const qId of questionnaireIds) {
-        await EvidenceReview.findOneAndUpdate(
-          { processId, serviceId: numServiceId, questionnaireId: qId, customerId },
-          {
-            consultantStatus: numStatus,
-            consultantStatusDate: new Date().toISOString(),
-            consultantId: req.user!._id,
-            firstStatus: 5,
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        consultantId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
+
+      if (questionnaireIds && questionnaireIds.length > 0) {
+        const nowStr = new Date().toISOString();
+        const operations = questionnaireIds.map((qId: any) => ({
+          updateOne: {
+            filter: { processId, serviceId: numServiceId, questionnaireId: qId, customerId },
+            update: {
+              $set: {
+                consultantStatus: numStatus,
+                consultantStatusDate: nowStr,
+                consultantId: req.user!._id,
+                firstStatus: 5,
+              },
+            },
+            upsert: true,
           },
-          { upsert: true }
-        );
+        }));
+        await EvidenceReview.bulkWrite(operations);
       }
 
       res.status(200).json({ success: true, message: 'Consultant batch status updated successfully.' });
@@ -154,6 +196,18 @@ export class ConsultantController {
       const { processId, serviceId, questionnaireId, customerId } = req.body;
       const files = req.files as Express.Multer.File[];
       const numServiceId = Number(serviceId);
+
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        consultantId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
 
       if (!files || files.length === 0) {
         res.status(400).json({ success: false, message: 'No files provided.' });
@@ -196,18 +250,18 @@ export class ConsultantController {
         query = { docs: id };
       }
 
-      const doc = await AssessorDocument.findOne(query);
+      const doc = await AssessorDocument.findOne({ ...query, userId: req.user!._id });
       if (!doc) {
-        res.status(404).json({ success: false, message: 'Document not found.' });
+        res.status(404).json({ success: false, message: 'Document not found or you are not authorized to delete it.' });
         return;
       }
 
       const filePath = path.resolve(__dirname, '../../../uploads/consultants', doc.docs);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (err) {
-          console.warn('Could not unlink file:', err);
+      try {
+        await fs.promises.unlink(filePath);
+      } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+          console.warn('Could not unlink consultant file:', err);
         }
       }
 

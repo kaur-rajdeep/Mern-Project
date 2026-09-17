@@ -7,7 +7,11 @@
     "frontend"
   ],
   "scripts": {
-    "build": "npm run build --workspace=backend && npm run build --workspace=frontend"
+    "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "test:clean": "node e2e/clean-test-data.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -15,10 +19,15 @@
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   }
 }

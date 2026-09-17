@@ -222,15 +222,9 @@ export class CustomerController {
       const user = req.user!;
       const customerId = user.parentId || user._id;
 
-      const doc = await EvidenceDocument.findById(id);
+      const doc = await EvidenceDocument.findOne({ _id: id, customerId });
       if (!doc) {
-        res.status(404).json({ success: false, message: 'Document not found.' });
-        return;
-      }
-
-      // Precondition 1: Cross-Tenant Ownership Check
-      if (doc.customerId.toString() !== customerId.toString()) {
-        res.status(403).json({ success: false, message: 'Unauthorized. You can only delete evidence documents belonging to your company.' });
+        res.status(404).json({ success: false, message: 'Document not found or does not belong to your organization.' });
         return;
       }
 
@@ -250,8 +244,12 @@ export class CustomerController {
 
       // Unlink file
       const filePath = path.resolve(__dirname, '../../../uploads/evidence', doc.docs);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      try {
+        await fs.promises.unlink(filePath);
+      } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+          console.warn('Could not unlink evidence file:', err);
+        }
       }
 
       await EvidenceDocument.findByIdAndDelete(id);

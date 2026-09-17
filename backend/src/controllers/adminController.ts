@@ -123,7 +123,6 @@ export class AdminController {
         address,
         passwordHash,
         legacyMd5Hash: legacyMd5,
-        pwdString: rawPassword,
         userType: UserType.CUSTOMER,
         status: UserStatus.ACTIVE,
       });
@@ -166,7 +165,6 @@ export class AdminController {
 
       if (password) {
         user.passwordHash = await bcrypt.hash(password, 10);
-        user.pwdString = password;
         user.legacyMd5Hash = crypto.createHash('md5').update(password).digest('hex');
       }
 
@@ -218,7 +216,6 @@ export class AdminController {
 
       const temporaryPassword = crypto.randomBytes(4).toString('hex');
       targetUser.passwordHash = await bcrypt.hash(temporaryPassword, 10);
-      targetUser.pwdString = '';
       targetUser.legacyMd5Hash = '';
 
       await targetUser.save();
@@ -355,7 +352,6 @@ export class AdminController {
         userType: Number(userType),
         passwordHash,
         legacyMd5Hash: legacyMd5,
-        pwdString: rawPassword,
         status: UserStatus.ACTIVE,
       });
 
@@ -772,26 +768,32 @@ export class AdminController {
       const customerId = (project.customerId as any)?._id || project.customerId;
       const processId = (project.processId as any)?._id || project.processId;
 
-      for (const qId of questionIds) {
-        await EvidenceReview.findOneAndUpdate(
-          {
-            serviceId: project.serviceId,
-            customerId,
-            processId,
-            questionnaireId: qId,
+      if (questionIds && questionIds.length > 0) {
+        const now = new Date();
+        const operations = questionIds.map((qId: any) => ({
+          updateOne: {
+            filter: {
+              serviceId: project.serviceId,
+              customerId,
+              processId,
+              questionnaireId: qId,
+            },
+            update: {
+              $set: {
+                serviceId: project.serviceId,
+                customerId,
+                processId,
+                questionnaireId: qId,
+                adminStatus: numericStatus,
+                adminStatusDate: now,
+                allStatus,
+                allStatusDate: now,
+              },
+            },
+            upsert: true,
           },
-          {
-            serviceId: project.serviceId,
-            customerId,
-            processId,
-            questionnaireId: qId,
-            adminStatus: numericStatus,
-            adminStatusDate: new Date(),
-            allStatus,
-            allStatusDate: new Date(),
-          },
-          { upsert: true, new: true }
-        );
+        }));
+        await EvidenceReview.bulkWrite(operations);
       }
 
       res.status(200).json({ success: true, message: 'Audit review statuses updated successfully.' });
@@ -935,10 +937,12 @@ export class AdminController {
 
       if (existing) {
         const oldPath = path.resolve(__dirname, '../../../uploads/report', existing.reportDocs);
-        if (fs.existsSync(oldPath)) {
-          try {
-            fs.unlinkSync(oldPath);
-          } catch {}
+        try {
+          await fs.promises.unlink(oldPath);
+        } catch (err: any) {
+          if (err.code !== 'ENOENT') {
+            console.warn('Could not unlink old report file:', err);
+          }
         }
         await ComplianceReport.findByIdAndDelete(existing._id);
       }
@@ -974,10 +978,12 @@ export class AdminController {
       }
 
       const filePath = path.resolve(__dirname, '../../../uploads/report', report.reportDocs);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch {}
+      try {
+        await fs.promises.unlink(filePath);
+      } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+          console.warn('Could not unlink report file:', err);
+        }
       }
 
       await ComplianceReport.findByIdAndDelete(reportId);

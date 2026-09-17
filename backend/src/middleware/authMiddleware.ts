@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 import { UserType } from '../constants/roles';
+import { AUTH_CONFIG } from '../config/auth';
 
 export interface AuthRequest extends Request {
   user?: IUser;
@@ -21,6 +22,9 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       token = String(req.query.token);
     } else if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
+    } else if (req.headers && req.headers.cookie) {
+      const match = req.headers.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+      if (match) token = decodeURIComponent(match[1]);
     }
 
     if (!token) {
@@ -28,8 +32,9 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       return;
     }
 
-    const secret = process.env.JWT_SECRET || 'panacea_infosec_jwt_super_secret_key_2026_!@#';
-    const decoded = jwt.verify(token, secret) as { id: string; userType: number };
+    const decoded = jwt.verify(token, AUTH_CONFIG.JWT_SECRET, {
+      algorithms: [AUTH_CONFIG.JWT_ALGORITHM],
+    }) as { id: string; userType: number };
 
     const user = await User.findById(decoded.id);
     if (!user || user.status !== 'active') {

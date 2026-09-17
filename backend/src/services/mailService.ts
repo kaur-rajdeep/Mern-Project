@@ -44,7 +44,7 @@ export class MailService {
       };
 
       if (!process.env.SMTP_USER) {
-        console.log(`[Mail Simulation] Password reset email simulated for ${toEmail}: Password: ${temporaryPassword}`);
+        console.log(`[Mail Simulation] Password reset email simulated for ${toEmail}`);
         return true;
       }
 
@@ -86,7 +86,7 @@ export class MailService {
       };
 
       if (!process.env.SMTP_USER) {
-        console.log(`[Mail Simulation] Welcome email simulated for ${toEmail}: Role: ${roleName}, Password: ${temporaryPassword}`);
+        console.log(`[Mail Simulation] Welcome email simulated for ${toEmail}: Role: ${roleName}`);
         return true;
       }
 

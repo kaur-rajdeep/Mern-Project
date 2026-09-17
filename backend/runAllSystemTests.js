@@ -122,7 +122,7 @@ async function runTestSuite() {
     const hash = await bcrypt.hash('customer123', 10);
     await mongoose.connection.collection('users').updateOne(
       { _id: custUser._id },
-      { $set: { passwordHash: hash, pwdString: 'customer123', status: 'active' } }
+      { $set: { passwordHash: hash, status: 'active' } }
     );
 
     const res = await api('/auth/login', {
@@ -165,7 +165,7 @@ async function runTestSuite() {
     const hash = await bcrypt.hash('consultant123', 10);
     await mongoose.connection.collection('users').updateOne(
       { _id: consUser._id },
-      { $set: { passwordHash: hash, pwdString: 'consultant123' } }
+      { $set: { passwordHash: hash } }
     );
 
     const res = await api('/auth/login', {

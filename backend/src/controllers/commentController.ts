@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuditComment, CustomerProcess } from '../models';
+import { AuditComment, CustomerProcess, ComplianceProject } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { UserType } from '../constants/roles';
 import { formatErrorMessage } from '../utils/formatError';
@@ -9,17 +9,25 @@ export class CommentController {
     try {
       let { questionId, serviceId, processId, customerId, comment } = req.body;
       const user = req.user!;
+      const numServiceId = Number(serviceId);
 
       if (!comment || !comment.trim()) {
         res.status(400).json({ success: false, message: 'Comment text is required.' });
         return;
       }
 
-      // If customerId is not provided or empty string, resolve it
-      if (!customerId || customerId === '') {
-        if (user.userType === UserType.CUSTOMER) {
-          customerId = user.parentId || user._id;
-        } else if (processId) {
+      // Fallback for questionId / questionnaireId naming
+      const targetQuestionId = questionId || req.body.questionnaireId;
+      if (!targetQuestionId) {
+        res.status(400).json({ success: false, message: 'Question ID is required.' });
+        return;
+      }
+
+      // Enforce strict multi-tenant customer scoping
+      if (user.userType === UserType.CUSTOMER) {
+        customerId = user.parentId || user._id;
+      } else if (!customerId || customerId === '') {
+        if (processId) {
           const proc = await CustomerProcess.findById(processId);
           if (proc) {
             customerId = proc.customerId;
@@ -27,9 +35,30 @@ export class CommentController {
         }
       }
 
+      // Verify Assessor project assignment before adding comment
+      if (user.userType === UserType.QSA) {
+        const assigned = await ComplianceProject.exists({ processId, serviceId: numServiceId, customerId, qsaId: user._id });
+        if (!assigned) {
+          res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+          return;
+        }
+      } else if (user.userType === UserType.QA) {
+        const assigned = await ComplianceProject.exists({ processId, serviceId: numServiceId, customerId, qaId: user._id });
+        if (!assigned) {
+          res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+          return;
+        }
+      } else if (user.userType === UserType.CONSULTANT) {
+        const assigned = await ComplianceProject.exists({ processId, serviceId: numServiceId, customerId, consultantId: user._id });
+        if (!assigned) {
+          res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+          return;
+        }
+      }
+
       const newComment = new AuditComment({
-        questionId,
-        serviceId: Number(serviceId),
+        questionId: targetQuestionId,
+        serviceId: numServiceId,
         processId,
         customerId,
         loginUserId: user._id,
@@ -48,20 +77,47 @@ export class CommentController {
 
   public async getComments(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { questionId, serviceId, processId } = req.query;
+      const { questionId, questionnaireId, serviceId, processId } = req.query;
       let customerId = req.query.customerId as string;
       const user = req.user!;
+      const numServiceId = Number(serviceId);
+
+      const targetQuestionId = questionId || questionnaireId;
 
       const query: any = {
-        questionId,
-        serviceId: Number(serviceId),
+        questionId: targetQuestionId,
+        serviceId: numServiceId,
         processId,
       };
 
-      if (customerId && customerId !== '') {
-        query.customerId = customerId;
-      } else if (user.userType === UserType.CUSTOMER) {
+      // Strict tenant isolation: customer can ONLY access their own comments
+      if (user.userType === UserType.CUSTOMER) {
         query.customerId = user.parentId || user._id;
+      } else {
+        if (customerId && customerId !== '') {
+          query.customerId = customerId;
+        }
+
+        // Verify Assessor project assignment before returning comments
+        if (user.userType === UserType.QSA) {
+          const assigned = await ComplianceProject.exists({ processId, serviceId: numServiceId, customerId: query.customerId, qsaId: user._id });
+          if (!assigned) {
+            res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+            return;
+          }
+        } else if (user.userType === UserType.QA) {
+          const assigned = await ComplianceProject.exists({ processId, serviceId: numServiceId, customerId: query.customerId, qaId: user._id });
+          if (!assigned) {
+            res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+            return;
+          }
+        } else if (user.userType === UserType.CONSULTANT) {
+          const assigned = await ComplianceProject.exists({ processId, serviceId: numServiceId, customerId: query.customerId, consultantId: user._id });
+          if (!assigned) {
+            res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+            return;
+          }
+        }
       }
 
       const comments = await AuditComment.find(query)
@@ -76,4 +132,5 @@ export class CommentController {
 }
 
 export const commentController = new CommentController();
+
 

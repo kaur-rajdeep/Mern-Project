@@ -110,6 +110,8 @@ export interface AssessorDocument {
 export interface AuditComment {
   _id: string;
   legacyId?: number;
+  questionId?: string;
+  questionnaireId?: string;
   comments: string;
   loginUserId: { _id: string; fullName: string; userType: number; email: string };
   loginUserDate: string;

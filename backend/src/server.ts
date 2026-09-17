@@ -4,7 +4,10 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import dns from 'dns';
+import helmet from 'helmet';
 import routes from './routes';
+import { AUTH_CONFIG } from './config/auth';
+import { apiLimiter } from './middleware/rateLimiter';
 
 dotenv.config();
 
@@ -14,6 +17,12 @@ try {
 } catch (e) {}
 
 const app = express();
+app.disable('x-powered-by');
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/panaceainfosec';
 
@@ -75,7 +84,8 @@ app.use('/api', async (req, res, next) => {
   next();
 });
 
-// API Routes
+// API Routes with Rate Limiting
+app.use('/api', apiLimiter);
 app.use('/api', routes);
 
 import { formatErrorMessage } from './utils/formatError';

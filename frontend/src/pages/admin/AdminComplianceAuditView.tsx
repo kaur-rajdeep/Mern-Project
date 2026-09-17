@@ -23,6 +23,7 @@ import {
 import api from '../../services/api';
 import { EvidenceExportModal } from '../../components/common/EvidenceExportModal';
 import { toast } from 'sonner';
+import { getDownloadQueryUrl } from '../../utils/fileUrl';
 
 export const AdminComplianceAuditView: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -122,7 +123,7 @@ export const AdminComplianceAuditView: React.FC = () => {
 
   const commentsMap = new Map<string, any[]>();
   comments.forEach((c) => {
-    const qId = String(c.questionnaireId);
+    const qId = String(c.questionId || c.questionnaireId);
     if (!commentsMap.has(qId)) commentsMap.set(qId, []);
     commentsMap.get(qId)!.push(c);
   });
@@ -568,7 +569,7 @@ export const AdminComplianceAuditView: React.FC = () => {
                                   <FileDown className="w-4 h-4 text-slate-500 shrink-0" />
                                   <div className="truncate">
                                     <a
-                                      href={`/api/files/download?path=evidence/${doc.docs}`}
+                                      href={getDownloadQueryUrl(`evidence/${doc.docs}`)}
                                       target="_blank"
                                       rel="noreferrer"
                                       download
@@ -722,7 +723,7 @@ export const AdminComplianceAuditView: React.FC = () => {
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
                       <a
-                        href={`/api/files/download?path=report/${aocReport.reportDocs}`}
+                        href={getDownloadQueryUrl(`report/${aocReport.reportDocs}`)}
                         target="_blank"
                         rel="noreferrer"
                         download
@@ -779,7 +780,7 @@ export const AdminComplianceAuditView: React.FC = () => {
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
                       <a
-                        href={`/api/files/download?path=report/${rocReport.reportDocs}`}
+                        href={getDownloadQueryUrl(`report/${rocReport.reportDocs}`)}
                         target="_blank"
                         rel="noreferrer"
                         download

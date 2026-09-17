@@ -17,6 +17,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { ThreadedComments } from '../../components/common/ThreadedComments';
 import { toast } from 'sonner';
 import { AuditItem } from '../../types';
+import { getFileDownloadUrl } from '../../utils/fileUrl';
 
 export const EvidenceAuditView: React.FC = () => {
   const { user } = useAuth();
@@ -377,7 +378,7 @@ export const EvidenceAuditView: React.FC = () => {
                               </div>
                               <div className="flex items-center space-x-1">
                                 <a
-                                  href={`/api/files/evidence/${doc.docs}`}
+                                  href={getFileDownloadUrl('evidence', doc.docs)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
@@ -422,7 +423,7 @@ export const EvidenceAuditView: React.FC = () => {
                                 </div>
                               </div>
                               <a
-                                href={`/api/files/qsa/${sDoc.docs}`}
+                                href={getFileDownloadUrl('qsa', sDoc.docs)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"

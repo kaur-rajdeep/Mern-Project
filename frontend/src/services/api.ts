@@ -54,7 +54,9 @@ api.interceptors.response.use(
 
     // Ensure error.userMessage is always a clean, intuitive string
     let userMessage = 'Unable to complete this action right now. Please try again.';
-    if (error.response?.data?.message && typeof error.response.data.message === 'string') {
+    if (error.response?.status === 429 || error.response?.status === 503 || error.response?.status === 504) {
+      userMessage = 'Servers are currently busy. Please try again later.';
+    } else if (error.response?.data?.message && typeof error.response.data.message === 'string') {
       userMessage = error.response.data.message;
     } else if (error.code === 'ERR_NETWORK') {
       userMessage = 'Server is currently unreachable. Please check your network connection.';

@@ -117,7 +117,7 @@ const EvidenceReviewSchema = new Schema<IEvidenceReview>(
 
 EvidenceReviewSchema.index(
   { serviceId: 1, processId: 1, questionnaireId: 1, customerId: 1 },
-  { unique: false }
+  { unique: true }
 );
 
 export const EvidenceReview = mongoose.model<IEvidenceReview>('EvidenceReview', EvidenceReviewSchema);

@@ -57,6 +57,18 @@ export class QsaController {
       const { processId, serviceId, customerId } = req.query;
       const numServiceId = Number(serviceId);
 
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        qsaId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
+
       const questionnaires = await Questionnaire.find({ serviceId: numServiceId, status: '1' }).sort({ legacyId: 1 });
 
       const [reviews, customerDocs, assessorDocs, comments] = await Promise.all([
@@ -93,6 +105,18 @@ export class QsaController {
     try {
       const { processId, serviceId, customerId, questionnaireId, status, allStatus, updates, comment } = req.body;
       const numServiceId = Number(serviceId);
+
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        qsaId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
 
       const itemsToUpdate: Array<{ questionnaireId: any; status?: any; allStatus?: any; comment?: string }> = [];
 
@@ -183,6 +207,18 @@ export class QsaController {
       const files = req.files as Express.Multer.File[];
       const numServiceId = Number(serviceId);
 
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: numServiceId,
+        customerId,
+        qsaId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
+
       if (!files || files.length === 0) {
         res.status(400).json({ success: false, message: 'No files uploaded.' });
         return;
@@ -229,18 +265,18 @@ export class QsaController {
         query = { docs: id };
       }
 
-      const doc = await AssessorDocument.findOne(query);
+      const doc = await AssessorDocument.findOne({ ...query, userId: req.user!._id });
       if (!doc) {
-        res.status(404).json({ success: false, message: 'Document not found.' });
+        res.status(404).json({ success: false, message: 'Document not found or you are not authorized to delete it.' });
         return;
       }
 
       const filePath = path.resolve(__dirname, '../../../uploads/qsa', doc.docs);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (err) {
-          console.warn('Could not unlink file:', err);
+      try {
+        await fs.promises.unlink(filePath);
+      } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+          console.warn('Could not unlink qsa file:', err);
         }
       }
 
@@ -254,6 +290,18 @@ export class QsaController {
   public async requestModification(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { processId, serviceId, questionnaireId, customerId } = req.body;
+
+      const isAssigned = await ComplianceProject.exists({
+        processId,
+        serviceId: Number(serviceId),
+        customerId,
+        qsaId: req.user!._id,
+      });
+
+      if (!isAssigned) {
+        res.status(403).json({ success: false, message: 'Forbidden. You are not assigned to this compliance project.' });
+        return;
+      }
       let review = await EvidenceReview.findOne({
         processId,
         serviceId: Number(serviceId),

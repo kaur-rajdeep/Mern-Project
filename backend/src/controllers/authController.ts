@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import { AUTH_CONFIG } from '../config/auth';
 import { UserStatus } from '../constants/roles';
 import { computeDeviceFingerprint } from '../utils/deviceFingerprint';
 import { mailService } from '../services/mailService';
@@ -71,7 +72,6 @@ export class AuthController {
       await user.save();
 
       // Sign JWT
-      const secret = process.env.JWT_SECRET || 'panacea_infosec_jwt_super_secret_key_2026_!@#';
       const token = jwt.sign(
         {
           id: user._id,
@@ -79,8 +79,11 @@ export class AuthController {
           email: user.email,
           fullName: user.fullName,
         },
-        secret,
-        { expiresIn: '7d' }
+        AUTH_CONFIG.JWT_SECRET,
+        {
+          expiresIn: AUTH_CONFIG.JWT_EXPIRES_IN as any,
+          algorithm: AUTH_CONFIG.JWT_ALGORITHM,
+        }
       );
 
       res.status(200).json({
@@ -152,14 +155,17 @@ export class AuthController {
 
       const user = await User.findOne({ email: email.toLowerCase().trim() });
       if (!user || user.status !== UserStatus.ACTIVE) {
-        res.status(404).json({ success: false, message: 'No active account found with this email address.' });
+        // SEC-009: Anti-enumeration generic response
+        res.status(200).json({
+          success: true,
+          message: 'If an active account is registered with this email, password recovery instructions have been sent.',
+        });
         return;
       }
 
-      // Generate 6-char random password matching legacy random_string('alnum', 6)
-      const temporaryPassword = crypto.randomBytes(3).toString('hex').toLowerCase();
+      // SEC-009: Generate high-entropy 12-character temporary password
+      const temporaryPassword = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, 'x').substring(0, 12);
       user.passwordHash = await bcrypt.hash(temporaryPassword, 10);
-      user.pwdString = temporaryPassword;
       user.legacyMd5Hash = crypto.createHash('md5').update(temporaryPassword).digest('hex');
       await user.save();
 
@@ -167,7 +173,7 @@ export class AuthController {
 
       res.status(200).json({
         success: true,
-        message: 'A new temporary password has been generated and sent to your email address.',
+        message: 'If an active account is registered with this email, password recovery instructions have been sent.',
       });
     } catch (error: any) {
       console.error('Forgot password error:', error);
@@ -199,7 +205,6 @@ export class AuthController {
       }
 
       user.passwordHash = await bcrypt.hash(newPassword, 10);
-      user.pwdString = newPassword;
       user.legacyMd5Hash = crypto.createHash('md5').update(newPassword).digest('hex');
       await user.save();
 

@@ -62,8 +62,7 @@ async function seedFresh() {
       permissions: "",
       isCertificateVerified: 1,
       legacyParentId: 0,
-      legacyMd5Hash: "",
-      pwdString: ""
+      legacyMd5Hash: ""
     });
     await adminUser.save();
     console.log(`Admin user created: ${adminUser.email}`);

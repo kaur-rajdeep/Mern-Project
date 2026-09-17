@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Award, Download, Calendar, FileText } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from 'sonner';
+import { getFileDownloadUrl } from '../../utils/fileUrl';
 
 export const AttestationReportsPage: React.FC = () => {
   const [years, setYears] = useState<number[]>([]);
@@ -100,7 +101,7 @@ export const AttestationReportsPage: React.FC = () => {
               <div className="mt-6 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <span className="text-[10px] text-slate-400 font-medium">Panacea Certified Deliverable</span>
                 <a
-                  href={`/api/files/report/${r.reportDocs}`}
+                  href={getFileDownloadUrl('report', r.reportDocs)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-semibold text-xs rounded-xl shadow-2xs transition flex items-center space-x-1.5"

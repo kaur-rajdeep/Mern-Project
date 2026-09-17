@@ -10,7 +10,6 @@ export interface IUser extends Document {
   phoneNumber: string;
   passwordHash: string; // bcrypt hash
   legacyMd5Hash?: string; // MD5 from MySQL for seamless initial login
-  pwdString?: string; // Plaintext representation for legacy Admin reveal parity
   companyName?: string;
   companyNumber?: string;
   address?: string;
@@ -36,7 +35,6 @@ const UserSchema = new Schema<IUser>(
     phoneNumber: { type: String, default: '' },
     passwordHash: { type: String, required: true },
     legacyMd5Hash: { type: String, default: '' },
-    pwdString: { type: String, default: '' },
     companyName: { type: String, default: '' },
     companyNumber: { type: String, default: '' },
     address: { type: String, default: '' },

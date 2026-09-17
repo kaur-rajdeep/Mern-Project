@@ -20,6 +20,7 @@ import { ThreadedComments } from '../../components/common/ThreadedComments';
 import { EvidenceExportModal } from '../../components/common/EvidenceExportModal';
 import { toast } from 'sonner';
 import { AuditItem } from '../../types';
+import { getFileDownloadUrl } from '../../utils/fileUrl';
 
 export const QaAuditView: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -378,7 +379,7 @@ export const QaAuditView: React.FC = () => {
                                 </span>
                               </div>
                               <a
-                                href={`/api/files/evidence/${doc.docs}`}
+                                href={getFileDownloadUrl('evidence', doc.docs)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
@@ -411,7 +412,7 @@ export const QaAuditView: React.FC = () => {
                                 </span>
                               </div>
                               <a
-                                href={`/api/files/qsa/${sDoc.docs}`}
+                                href={getFileDownloadUrl('qsa', sDoc.docs)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
