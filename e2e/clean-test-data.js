@@ -45,7 +45,13 @@ async function cleanTestData(filter = {}) {
         $or: [
           { email: { $regex: '^david\\.poc_', $options: 'i' } },
           { email: { $regex: '^testcust_', $options: 'i' } },
+          { email: { $regex: '^nova\\.poc_', $options: 'i' } },
+          { email: { $regex: '^qsa\\.test_', $options: 'i' } },
+          { email: { $regex: '^qa\\.test_', $options: 'i' } },
+          { email: { $regex: '^consultant\\.test_', $options: 'i' } },
+          { email: { $regex: '^unassigned\\.test_', $options: 'i' } },
           { companyName: { $regex: '^Apex Global Payments', $options: 'i' } },
+          { companyName: { $regex: '^Nova Compliance Corp', $options: 'i' } },
         ],
       };
     }
@@ -58,16 +64,12 @@ async function cleanTestData(filter = {}) {
       customerIds.push(new mongoose.Types.ObjectId(filter.customerId));
     }
 
-    if (customerIds.length === 0 && !filter.processId && !filter.projectId) {
-      console.log('No test data matching criteria found.');
-      return { cleaned: 0 };
-    }
-
     // 2. Find all associated processes
     const processQuery = {
       $or: [
         { customerId: { $in: customerIds } },
         { processName: { $regex: '^Core Payment Enclave', $options: 'i' } },
+        { processName: { $regex: '^Payment Vault Alpha', $options: 'i' } },
       ],
     };
     if (filter.processId) {
@@ -178,9 +180,14 @@ async function cleanTestData(filter = {}) {
       ],
     });
 
-    // 10. Delete Customer Users
+    // 10. Delete Customer & Assessor Test Users
     const deletedUsers = await db.collection('users').deleteMany({
       _id: { $in: customerIds },
+    });
+
+    // 11. Delete Temporary Control Questions
+    const deletedQuestions = await db.collection('questions').deleteMany({
+      question: { $regex: '^Verify automated encryption of payment cardholder PAN data at rest', $options: 'i' },
     });
 
     console.log(`[E2E Cleanup] Purged test data:
@@ -190,7 +197,8 @@ async function cleanTestData(filter = {}) {
       Evidence Files: ${deletedEvidence.deletedCount}
       Reports: ${deletedReports.deletedCount}
       Comments: ${deletedComments.deletedCount}
-      Reviews: ${deletedReviews.deletedCount}`);
+      Reviews: ${deletedReviews.deletedCount}
+      Questions: ${deletedQuestions.deletedCount}`);
 
     return {
       users: deletedUsers.deletedCount,
