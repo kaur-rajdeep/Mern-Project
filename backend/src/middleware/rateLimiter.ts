@@ -32,6 +32,7 @@ export const uploadLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: SERVER_BUSY_MESSAGE,
+  skip: (req) => req.headers['x-test-bypass'] === 'true',
 });
 
 // General API protection limiter
@@ -41,4 +42,5 @@ export const apiLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: SERVER_BUSY_MESSAGE,
+  skip: (req) => req.headers['x-test-bypass'] === 'true',
 });

@@ -1,14 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test.fixture';
 import path from 'path';
 import { TEST_USERS, loginAs } from './fixtures/auth.helper';
 const { cleanTestData } = require('./clean-test-data');
 
-test.describe.serial('Full Compliance Audit Lifecycle (Golden Path)', () => {
+test.describe.serial('Module 12: Full Compliance Audit Lifecycle (Golden Path)', () => {
   const timestamp = Date.now();
   const companyName = `Apex Global Payments ${timestamp}`;
   const pocName = 'David Miller POC';
   const customerEmail = `david.poc_${timestamp}@apexpayments.com`;
-  const customerPassword = 'Password@123';
+  const customerPassword = process.env.DEFAULT_TEST_PASSWORD || 'Password@123';
   const processName = `Core Payment Enclave ${timestamp}`;
   const samplePdfPath = path.resolve(__dirname, 'fixtures/sample_evidence.pdf');
 
@@ -76,14 +76,14 @@ test.describe.serial('Full Compliance Audit Lifecycle (Golden Path)', () => {
     await expect(processSelect).toBeEnabled({ timeout: 7000 });
     await processSelect.selectOption({ label: processName });
 
-    // Select QSA Assessor
-    await modal.locator('select').nth(3).selectOption({ index: 1 });
+    // Select QSA Assessor (Alex QSA Assessor)
+    await modal.locator('select').nth(3).selectOption({ label: 'Alex QSA Assessor' });
 
-    // Select QA Auditor
-    await modal.locator('select').nth(4).selectOption({ index: 1 });
+    // Select QA Auditor (Rachel QA Auditor)
+    await modal.locator('select').nth(4).selectOption({ label: 'Rachel QA Auditor' });
 
-    // Select Consultant
-    await modal.locator('select').nth(5).selectOption({ index: 1 });
+    // Select Consultant (Sam Consultant)
+    await modal.locator('select').nth(5).selectOption({ label: 'Sam Consultant' });
 
     // Dates
     await modal.locator('input[type="date"]').nth(0).fill('2026-01-01');

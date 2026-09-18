@@ -9,8 +9,16 @@
   "scripts": {
     "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
     "test:e2e": "playwright test",
+    "test:e2e:local": "cross-env TEST_ENV=local playwright test",
+    "test:e2e:dev": "cross-env TEST_ENV=dev playwright test",
+    "test:e2e:auth": "cross-env TEST_ENV=local playwright test e2e/01-auth-and-rbac.spec.ts",
+    "test:e2e:admin": "cross-env TEST_ENV=local playwright test e2e/02-admin-customer-scope.spec.ts e2e/03-admin-assessors-and-guard.spec.ts e2e/04-admin-projects-and-reporting.spec.ts e2e/05-admin-questionnaires.spec.ts",
+    "test:e2e:workspaces": "cross-env TEST_ENV=local playwright test e2e/06-customer-evidence.spec.ts e2e/07-qsa-assessment.spec.ts e2e/08-qa-review-and-batch.spec.ts e2e/09-consultant-advisory.spec.ts e2e/10-filter-tabs-and-numbering.spec.ts",
+    "test:e2e:security": "cross-env TEST_ENV=local playwright test e2e/11-security-and-storage.spec.ts",
+    "test:e2e:lifecycle": "cross-env TEST_ENV=local playwright test e2e/12-full-compliance-lifecycle.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
+    "test:setup-users": "node e2e/setup-test-users.js",
     "test:clean": "node e2e/clean-test-data.js"
   },
   "dependencies": {
@@ -28,6 +36,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "cross-env": "^10.1.0"
   }
 }

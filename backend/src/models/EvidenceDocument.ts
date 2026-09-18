@@ -16,6 +16,11 @@ export interface IEvidenceDocument extends Document {
   fileSize?: number;
   mimeType?: string;
   sha256Checksum?: string;
+  storageType?: 'local' | 's3';
+  s3Url?: string;
+  s3Key?: string;
+  s3Bucket?: string;
+  folder?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +42,11 @@ const EvidenceDocumentSchema = new Schema<IEvidenceDocument>(
     fileSize: { type: Number },
     mimeType: { type: String },
     sha256Checksum: { type: String },
+    storageType: { type: String, enum: ['local', 's3'], default: 'local' },
+    s3Url: { type: String, default: '' },
+    s3Key: { type: String, default: '' },
+    s3Bucket: { type: String, default: '' },
+    folder: { type: String, default: 'evidence' },
   },
   { timestamps: true }
 );

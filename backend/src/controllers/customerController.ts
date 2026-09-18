@@ -18,6 +18,7 @@ import {
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
 import { mailService } from '../services/mailService';
+import { storageService } from '../services/storageService';
 
 export class CustomerController {
   public async getDashboard(req: AuthRequest, res: Response): Promise<void> {
@@ -176,6 +177,7 @@ export class CustomerController {
       const savedDocs = [];
       if (files && files.length > 0) {
         for (const file of files) {
+          const fileObj = file as any;
           const doc = new EvidenceDocument({
             questionnaireId,
             serviceId: numServiceId,
@@ -186,6 +188,11 @@ export class CustomerController {
             originalFilename: file.originalname,
             fileSize: file.size,
             mimeType: file.mimetype,
+            storageType: fileObj.storageType || (storageService.isS3Enabled() ? 's3' : 'local'),
+            s3Url: fileObj.s3Url || '',
+            s3Key: fileObj.s3Key || '',
+            s3Bucket: fileObj.s3Bucket || '',
+            folder: 'evidence',
           });
           await doc.save();
           savedDocs.push(doc);
@@ -289,15 +296,8 @@ export class CustomerController {
         return;
       }
 
-      // Unlink file
-      const filePath = path.resolve(__dirname, '../../../uploads/evidence', doc.docs);
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err: any) {
-        if (err.code !== 'ENOENT') {
-          console.warn('Could not unlink evidence file:', err);
-        }
-      }
+      // Delete file via storageService (handles both S3 and local)
+      await storageService.deleteFile('evidence', doc.docs);
 
       await EvidenceDocument.findByIdAndDelete(id);
       res.status(200).json({ success: true, message: 'Document deleted successfully.' });

@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/test.fixture';
+import { API_BASE } from './fixtures/auth.helper';
 
-test.describe('Module 11: Security Hardening & Rate Limiting Verification', () => {
-
-  const API_BASE = 'http://localhost:5000/api';
+test.describe('Module 11: Security Hardening & Edge Case Validations', () => {
 
   test('SEC-012: Production Security Headers & X-Powered-By Stripped', async ({ request }) => {
     const res = await request.get(`${API_BASE}/health`);
@@ -24,6 +23,12 @@ test.describe('Module 11: Security Hardening & Rate Limiting Verification', () =
     expect([401, 403]).toContain(res.status());
   });
 
+  test('SEC-03: Path Traversal Attack Blocked', async ({ request }) => {
+    // Attempt directory traversal payload
+    const res = await request.get(`${API_BASE}/files/download?path=../../../../../../etc/passwd`);
+    expect([400, 401, 403, 404]).toContain(res.status());
+  });
+
   test('SEC-009: Forgot Password Anti-Enumeration Message', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/forgot-password`, {
       data: { email: 'completely.unknown.fake.account@panaceatest.com' },
@@ -41,7 +46,7 @@ test.describe('Module 11: Security Hardening & Rate Limiting Verification', () =
     let hitRateLimit = false;
     let rateLimitMessage = '';
 
-    // Trigger forgot password rate limit (configured for 5 req / 15m)
+    // Trigger forgot password rate limit (5 req / 15m)
     for (let i = 0; i < 7; i++) {
       const res = await directRequest.post(`${API_BASE}/auth/forgot-password`, {
         data: { email: `ratelimit_probe_${i}@panaceatest.com` },

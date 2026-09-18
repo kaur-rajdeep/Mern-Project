@@ -1,8 +1,20 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load base .env
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+const testEnv = (process.env.TEST_ENV || 'local').toLowerCase();
+dotenv.config({ path: path.resolve(__dirname, `../.env.${testEnv}`), override: true });
+
+const isDev = testEnv === 'dev' || testEnv === 'development';
+
 const mongoose = require('mongoose');
 const fs = require('fs');
-const path = require('path');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/panaceainfosec';
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  (isDev ? process.env.DEV_MONGODB_URI : process.env.LOCAL_MONGODB_URI) ||
+  'mongodb://127.0.0.1:27017/panaceainfosec';
 const UPLOADS_DIR = path.resolve(__dirname, '../uploads');
 
 /**
@@ -11,6 +23,11 @@ const UPLOADS_DIR = path.resolve(__dirname, '../uploads');
  * If no filter is passed, cleans all historical test data matching Apex Global Payments / david.poc_.
  */
 async function cleanTestData(filter = {}) {
+  if (!MONGODB_URI) {
+    console.log(`[cleanTestData] Notice: No MONGODB_URI configured for environment: "${testEnv}". Skipping DB cleanup.`);
+    return { cleaned: 0 };
+  }
+
   const shouldDisconnect = !mongoose.connection.readyState;
   if (shouldDisconnect) {
     await mongoose.connect(MONGODB_URI);

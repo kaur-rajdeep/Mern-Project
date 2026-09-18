@@ -1,4 +1,23 @@
 import { defineConfig } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load base .env file
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// Optionally load environment-specific .env if TEST_ENV is set (.env.local or .env.dev)
+const testEnv = (process.env.TEST_ENV || 'local').toLowerCase();
+dotenv.config({ path: path.resolve(__dirname, `.env.${testEnv}`), override: true });
+
+const isDev = testEnv === 'dev' || testEnv === 'development';
+
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL ||
+  (isDev ? process.env.DEV_BASE_URL : process.env.LOCAL_BASE_URL) ||
+  'http://localhost:5173';
+
+const headless = process.env.HEADLESS !== undefined ? process.env.HEADLESS === 'true' : true;
+const browserChannel = process.env.BROWSER_CHANNEL || 'chrome';
 
 export default defineConfig({
   testDir: './e2e',
@@ -12,22 +31,21 @@ export default defineConfig({
   workers: 1, // sequential execution to avoid DB state conflicts
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
-    baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',
+    baseURL,
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    channel: 'chrome', // Use local Google Chrome
-    headless: true,
-    extraHTTPHeaders: {
-      'x-test-bypass': 'true',
-    },
+    video: 'retain-on-failure',
+    channel: browserChannel,
+    headless,
   },
   projects: [
     {
       name: 'Google Chrome',
       use: {
-        channel: 'chrome',
+        channel: browserChannel,
         viewport: { width: 1280, height: 720 },
       },
     },
   ],
 });
+

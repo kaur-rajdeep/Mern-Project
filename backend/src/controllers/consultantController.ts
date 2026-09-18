@@ -14,6 +14,7 @@ import {
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
+import { storageService } from '../services/storageService';
 
 export class ConsultantController {
   public async getDashboard(req: AuthRequest, res: Response): Promise<void> {
@@ -216,6 +217,7 @@ export class ConsultantController {
 
       const savedDocs = [];
       for (const file of files) {
+        const fileObj = file as any;
         const doc = new AssessorDocument({
           questionnaireId,
           serviceId: numServiceId,
@@ -226,6 +228,11 @@ export class ConsultantController {
           originalFilename: file.originalname,
           fileSize: file.size,
           mimeType: file.mimetype,
+          storageType: fileObj.storageType || (storageService.isS3Enabled() ? 's3' : 'local'),
+          s3Url: fileObj.s3Url || '',
+          s3Key: fileObj.s3Key || '',
+          s3Bucket: fileObj.s3Bucket || '',
+          folder: 'consultants',
         });
         await doc.save();
         savedDocs.push(doc);
@@ -256,14 +263,7 @@ export class ConsultantController {
         return;
       }
 
-      const filePath = path.resolve(__dirname, '../../../uploads/consultants', doc.docs);
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err: any) {
-        if (err.code !== 'ENOENT') {
-          console.warn('Could not unlink consultant file:', err);
-        }
-      }
+      await storageService.deleteFile('consultants', doc.docs);
 
       await AssessorDocument.deleteOne({ _id: doc._id });
       res.status(200).json({ success: true, message: 'Document deleted successfully.' });

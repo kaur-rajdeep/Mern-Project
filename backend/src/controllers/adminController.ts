@@ -23,6 +23,7 @@ import {
 } from '../models';
 import { UserType, UserStatus } from '../constants/roles';
 import { mailService } from '../services/mailService';
+import { storageService } from '../services/storageService';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { formatErrorMessage } from '../utils/formatError';
 import { createCustomerSchema, createAssessorSchema, validate } from '../middleware/validateRequest';
@@ -1076,17 +1077,11 @@ export class AdminController {
       });
 
       if (existing) {
-        const oldPath = path.resolve(__dirname, '../../../uploads/report', existing.reportDocs);
-        try {
-          await fs.promises.unlink(oldPath);
-        } catch (err: any) {
-          if (err.code !== 'ENOENT') {
-            console.warn('Could not unlink old report file:', err);
-          }
-        }
+        await storageService.deleteFile('report', existing.reportDocs);
         await ComplianceReport.findByIdAndDelete(existing._id);
       }
 
+      const fileObj = file as any;
       const report = new ComplianceReport({
         serviceId: project.serviceId,
         customerId,
@@ -1099,6 +1094,11 @@ export class AdminController {
         reportOf: type,
         date: new Date().toISOString().split('T')[0],
         year: new Date().getFullYear(),
+        storageType: fileObj.storageType || (storageService.isS3Enabled() ? 's3' : 'local'),
+        s3Url: fileObj.s3Url || '',
+        s3Key: fileObj.s3Key || '',
+        s3Bucket: fileObj.s3Bucket || '',
+        folder: 'report',
       });
 
       await report.save();
@@ -1141,14 +1141,7 @@ export class AdminController {
         return;
       }
 
-      const filePath = path.resolve(__dirname, '../../../uploads/report', report.reportDocs);
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err: any) {
-        if (err.code !== 'ENOENT') {
-          console.warn('Could not unlink report file:', err);
-        }
-      }
+      await storageService.deleteFile('report', report.reportDocs);
 
       await ComplianceReport.findByIdAndDelete(reportId);
       res.status(200).json({ success: true, message: 'Report removed successfully.' });

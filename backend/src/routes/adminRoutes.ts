@@ -6,32 +6,11 @@ import { adminController } from '../controllers/adminController';
 import { requireAuth, requireRole } from '../middleware/authMiddleware';
 import { UserType } from '../constants/roles';
 
-// Configure Multer for ROC / AOC Report Uploads
-let reportUploadDir = path.resolve(__dirname, '../../../uploads/report');
-try {
-  if (!fs.existsSync(reportUploadDir)) {
-    fs.mkdirSync(reportUploadDir, { recursive: true });
-  }
-} catch (err) {
-  reportUploadDir = path.join('/tmp', 'uploads', 'report');
-  if (!fs.existsSync(reportUploadDir)) {
-    fs.mkdirSync(reportUploadDir, { recursive: true });
-  }
-}
+import { storageService } from '../services/storageService';
 
-const reportStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, reportUploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
-});
-
+// Configure Multer for ROC / AOC Report Uploads (Hybrid S3 / Local)
 const uploadReport = multer({
-  storage: reportStorage,
+  storage: storageService.createHybridMulterStorage('report'),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (_req, file, cb) => {
     if (file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) {

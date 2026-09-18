@@ -8,41 +8,9 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import { UserType } from '../constants/roles';
 import { formatErrorMessage } from '../utils/formatError';
 
-let UPLOADS_ROOT = path.resolve(__dirname, '../../../uploads');
+import { storageService } from '../services/storageService';
 
-// Ensure upload folders exist
-try {
-  const folders = ['evidence', 'qsa', 'qa', 'consultants', 'report'];
-  folders.forEach((f) => {
-    const dir = path.join(UPLOADS_ROOT, f);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
-} catch (err) {
-  UPLOADS_ROOT = path.join('/tmp', 'uploads');
-  const folders = ['evidence', 'qsa', 'qa', 'consultants', 'report'];
-  folders.forEach((f) => {
-    const dir = path.join(UPLOADS_ROOT, f);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
-}
-
-// Multer Storage Configuration with cryptographically unique UUIDs (SEC-007)
-const createMulterStorage = (subfolder: string) =>
-  multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, path.join(UPLOADS_ROOT, subfolder));
-    },
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 32);
-      const uuid = crypto.randomUUID();
-      cb(null, `${base}-${uuid}${ext}`);
-    },
-  });
+let UPLOADS_ROOT = storageService.getUploadsRoot();
 
 // Allowed file extensions & disallowed dangerous formats
 const ALLOWED_EVIDENCE_EXTS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.png', '.jpg', '.jpeg', '.txt', '.zip', '.rar', '.7z'];
@@ -63,31 +31,31 @@ const commonFileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileF
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB uniform limit
 
 export const uploadEvidenceStorage = multer({
-  storage: createMulterStorage('evidence'),
+  storage: storageService.createHybridMulterStorage('evidence'),
   limits: { fileSize: MAX_FILE_SIZE, files: 10 },
   fileFilter: commonFileFilter,
 });
 
 export const uploadQsaStorage = multer({
-  storage: createMulterStorage('qsa'),
+  storage: storageService.createHybridMulterStorage('qsa'),
   limits: { fileSize: MAX_FILE_SIZE, files: 10 },
   fileFilter: commonFileFilter,
 });
 
 export const uploadQaStorage = multer({
-  storage: createMulterStorage('qa'),
+  storage: storageService.createHybridMulterStorage('qa'),
   limits: { fileSize: MAX_FILE_SIZE, files: 10 },
   fileFilter: commonFileFilter,
 });
 
 export const uploadConsultantStorage = multer({
-  storage: createMulterStorage('consultants'),
+  storage: storageService.createHybridMulterStorage('consultants'),
   limits: { fileSize: MAX_FILE_SIZE, files: 10 },
   fileFilter: commonFileFilter,
 });
 
 export const uploadReportStorage = multer({
-  storage: createMulterStorage('report'),
+  storage: storageService.createHybridMulterStorage('report'),
   limits: { fileSize: MAX_FILE_SIZE, files: 5 },
   fileFilter: commonFileFilter,
 });
@@ -230,18 +198,25 @@ export class FileController {
         }
       }
 
-      const targetDir = path.join(UPLOADS_ROOT, safeFolder);
-      const filePath = path.join(targetDir, safeFilename);
-
-      // SEC-004: Strictly return 404 if file does not exist (never auto-generate dummy files on disk)
-      if (!fs.existsSync(filePath)) {
+      // SEC-004: Strictly return 404 if file does not exist
+      const exists = await storageService.fileExists(safeFolder, safeFilename);
+      if (!exists) {
         res.status(404).json({ success: false, message: 'File not found in the audit repository.' });
         return;
       }
 
+      const fileData = await storageService.getFileStream(safeFolder, safeFilename);
+
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Content-Security-Policy', "default-src 'none'");
-      res.download(filePath, safeFilename);
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFilename)}"`);
+      if (fileData.mimeType) {
+        res.setHeader('Content-Type', fileData.mimeType);
+      }
+      if (fileData.size) {
+        res.setHeader('Content-Length', fileData.size);
+      }
+      fileData.stream.pipe(res);
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
     }
@@ -260,6 +235,7 @@ export class FileController {
       const maxRep = await ComplianceReport.findOne().sort({ legacyId: -1 });
       const nextLegacyId = (maxRep?.legacyId || 0) + 1;
 
+      const fileObj = file as any;
       const newReport = new ComplianceReport({
         legacyId: nextLegacyId,
         serviceId: Number(serviceId),
@@ -273,6 +249,11 @@ export class FileController {
         originalFilename: file.originalname,
         fileSize: file.size,
         mimeType: file.mimetype,
+        storageType: fileObj.storageType || (storageService.isS3Enabled() ? 's3' : 'local'),
+        s3Url: fileObj.s3Url || '',
+        s3Key: fileObj.s3Key || '',
+        s3Bucket: fileObj.s3Bucket || '',
+        folder: 'report',
       });
 
       await newReport.save();
