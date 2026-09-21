@@ -9,8 +9,58 @@ import {
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
 
+/**
+ * Standalone helper — extracted outside the class to avoid `this`-binding
+ * issues when Express calls class methods as bare function references.
+ */
+async function computeEngagementStats(
+  numServiceId: number,
+  customerId: string,
+  processId: string
+) {
+  const totalQuestions = await Questionnaire.countDocuments({
+    serviceId: numServiceId,
+    status: '1',
+  });
+
+  const reviews = await EvidenceReview.find({
+    serviceId: numServiceId,
+    customerId,
+    processId,
+  });
+
+  const attempted = reviews.filter((r) => r.questCheckedVal === 'on').length;
+  const notAttempted = Math.max(0, totalQuestions - attempted);
+
+  const assignedToQsa = reviews.filter((r) => r.status === 0 || r.firstStatus === 1).length;
+  const assignedToQa = reviews.filter((r) => r.status === 1).length;
+  const approvedByQa = reviews.filter((r) => r.qaStatus === 1).length;
+  const disapprovedByQsa = reviews.filter((r) => r.status === 2).length;
+  const disapprovedByQa = reviews.filter((r) => r.qaStatus === 2).length;
+  const markedIncomplete = reviews.filter((r) => r.qaStatus === 4 || r.status === 4).length;
+
+  // "Needs your action" = disapproved by QSA + disapproved by QA + marked incomplete
+  const needsAction = disapprovedByQsa + disapprovedByQa + markedIncomplete;
+  // "In review" = assigned to QSA + assigned to QA
+  const inReview = assignedToQsa + assignedToQa;
+
+  return {
+    totalQuestions,
+    attempted,
+    notAttempted,
+    assignedToQsa,
+    assignedToQa,
+    approvedByQa,
+    disapprovedByQsa,
+    disapprovedByQa,
+    markedIncomplete,
+    needsAction,
+    inReview,
+  };
+}
+
 export class AnalyticsController {
-  public async getProcessStats(req: Request, res: Response): Promise<void> {
+  public getProcessStats = async (req: Request, res: Response): Promise<void> => {
     try {
       const { serviceId, customerId, processId } = req.body;
       const numServiceId = Number(serviceId);
@@ -55,64 +105,18 @@ export class AnalyticsController {
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
-  }
-
-  /**
-   * Computes per-engagement stats for a single service/testing ID.
-   */
-  private async computeEngagementStats(
-    numServiceId: number,
-    customerId: string,
-    processId: string
-  ) {
-    const totalQuestions = await Questionnaire.countDocuments({
-      serviceId: numServiceId,
-      status: '1',
-    });
-
-    const reviews = await EvidenceReview.find({
-      serviceId: numServiceId,
-      customerId,
-      processId,
-    });
-
-    const attempted = reviews.filter((r) => r.questCheckedVal === 'on').length;
-    const notAttempted = Math.max(0, totalQuestions - attempted);
-
-    const assignedToQsa = reviews.filter((r) => r.status === 0 || r.firstStatus === 1).length;
-    const assignedToQa = reviews.filter((r) => r.status === 1).length;
-    const approvedByQa = reviews.filter((r) => r.qaStatus === 1).length;
-    const disapprovedByQsa = reviews.filter((r) => r.status === 2).length;
-    const disapprovedByQa = reviews.filter((r) => r.qaStatus === 2).length;
-    const markedIncomplete = reviews.filter((r) => r.qaStatus === 4 || r.status === 4).length;
-
-    // "Needs your action" = disapproved by QSA + disapproved by QA + marked incomplete
-    const needsAction = disapprovedByQsa + disapprovedByQa + markedIncomplete;
-    // "In review" = assigned to QSA + assigned to QA
-    const inReview = assignedToQsa + assignedToQa;
-
-    return {
-      totalQuestions,
-      attempted,
-      notAttempted,
-      assignedToQsa,
-      assignedToQa,
-      approvedByQa,
-      disapprovedByQsa,
-      disapprovedByQa,
-      markedIncomplete,
-      needsAction,
-      inReview,
-    };
-  }
+  };
 
   /**
    * Returns a full process dashboard summary with per-engagement stats.
    * Includes BOTH compliance frameworks AND testing engagements that are
    * currently active (status = 0) within the specified process.
    * Used by the new customer ProcessDetailsPage.
+   *
+   * Defined as an arrow function property so `this` is always bound correctly
+   * when Express calls it as a bare route handler reference.
    */
-  public async getProcessDashboard(req: AuthRequest, res: Response): Promise<void> {
+  public getProcessDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const { processId } = req.body;
       const user = req.user!;
@@ -157,14 +161,14 @@ export class AnalyticsController {
           const serviceName =
             complianceServices.find((s) => s.legacyId === cp.serviceId)?.serviceName ||
             `Service #${cp.serviceId}`;
-          const stats = await this.computeEngagementStats(
+          const stats = await computeEngagementStats(
             Number(cp.serviceId),
             customerId,
             processId
           );
           return {
             _id: cpObj._id.toString(),
-            engagementId: cp.serviceId,  // used for the evidence-audit link
+            engagementId: cp.serviceId, // used for the evidence-audit link
             engagementType: 'compliance' as const,
             engagementName: serviceName,
             startDate: cpObj.startDate,
@@ -184,14 +188,14 @@ export class AnalyticsController {
           const testingName =
             testingServices.find((s) => s.legacyId === tp.testingId)?.testingName ||
             `Testing #${tp.testingId}`;
-          const stats = await this.computeEngagementStats(
+          const stats = await computeEngagementStats(
             Number(tp.testingId),
             customerId,
             processId
           );
           return {
             _id: tpObj._id.toString(),
-            engagementId: tp.testingId,  // used for the evidence-audit link
+            engagementId: tp.testingId, // used for the evidence-audit link
             engagementType: 'testing' as const,
             engagementName: testingName,
             startDate: tpObj.startDate,
@@ -227,7 +231,7 @@ export class AnalyticsController {
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
-  }
+  };
 }
 
 export const analyticsController = new AnalyticsController();
