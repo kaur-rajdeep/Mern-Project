@@ -73,7 +73,7 @@ async function verifyEmailService() {
 
   // 6. Test Security Alert Mail for Bulk Export
   const res6 = await mailService.sendSecurityAlertMail(
-    'admin@panaceainfosec.com',
+    'shivram.dutt@radpretation.ai',
     'Full Compliance Evidence Package Exported',
     {
       requesterName: 'John Assessor',
