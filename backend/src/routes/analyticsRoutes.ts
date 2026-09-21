@@ -7,5 +7,6 @@ const router = Router();
 router.use(requireAuth);
 
 router.post('/process-stats', analyticsController.getProcessStats);
+router.post('/process-dashboard', analyticsController.getProcessDashboard);
 
 export default router;

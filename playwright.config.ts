@@ -29,6 +29,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // sequential execution to avoid DB state conflicts
+  globalSetup: require.resolve('./e2e/setup-test-users.js'),
   globalTeardown: require.resolve('./e2e/global-teardown.ts'),
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {

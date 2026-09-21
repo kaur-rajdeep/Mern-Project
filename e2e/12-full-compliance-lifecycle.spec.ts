@@ -114,9 +114,9 @@ test.describe.serial('Module 12: Full Compliance Audit Lifecycle (Golden Path)',
     await expect(processCard).toBeVisible({ timeout: 8000 });
     await processCard.click();
 
-    // 3. Process Details Page -> Click Upload & Review Evidences
+    // 3. Process Details Page -> Click Upload & review evidence
     await page.waitForLoadState('networkidle');
-    const uploadLink = page.locator('a:has-text("Upload & Review Evidences")');
+    const uploadLink = page.locator('a:has-text("Upload & review evidence")');
     await expect(uploadLink).toBeVisible({ timeout: 7000 });
 
     await uploadLink.click();
