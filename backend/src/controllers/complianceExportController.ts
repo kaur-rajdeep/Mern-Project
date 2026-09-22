@@ -497,12 +497,12 @@ export class ComplianceExportController {
             user.userType === UserType.ADMIN
               ? 'Administrator'
               : user.userType === UserType.QSA
-              ? 'QSA'
-              : user.userType === UserType.QA
-              ? 'QA'
-              : 'Consultant';
+                ? 'QSA'
+                : user.userType === UserType.QA
+                  ? 'QA'
+                  : 'Consultant';
 
-          const adminEmail = (global as any).process?.env?.ADMIN_EMAIL || 'mukul@tekshapers.com';
+          const adminEmail = (globalThis as any).process?.env?.ADMIN_EMAIL || 'shivram.dutt@radpretation.ai';
           await mailService.sendSecurityAlertMail(adminEmail, 'Full Compliance Evidence Package Exported', {
             requesterName: user.fullName,
             requesterEmail: user.email,

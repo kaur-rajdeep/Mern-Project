@@ -18,6 +18,7 @@ import { ComplianceProjects } from './pages/admin/ComplianceProjects';
 import { AdminComplianceAuditView } from './pages/admin/AdminComplianceAuditView';
 import { QuestionnairesManagement } from './pages/admin/QuestionnairesManagement';
 import { ArchivedProcesses } from './pages/admin/ArchivedProcesses';
+import { EvidenceExportLogsPage } from './pages/admin/EvidenceExportLogsPage';
 
 // Customer Pages
 import { CustomerDashboard } from './pages/customer/CustomerDashboard';
@@ -161,6 +162,14 @@ const router = createBrowserRouter(
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/export-logs"
+          element={
+            <ProtectedRoute allowedRoles={[UserType.ADMIN]}>
+              <EvidenceExportLogsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Customer Routes */}
         <Route
@@ -228,6 +237,14 @@ const router = createBrowserRouter(
           element={
             <ProtectedRoute allowedRoles={[UserType.QA]}>
               <QaAuditView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/qa/export-logs"
+          element={
+            <ProtectedRoute allowedRoles={[UserType.QA]}>
+              <EvidenceExportLogsPage />
             </ProtectedRoute>
           }
         />

@@ -86,6 +86,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <Archive className="w-4 h-4 shrink-0" />
                 <span>Archived Processes</span>
               </NavLink>
+              <NavLink to="/admin/export-logs" className={linkClass}>
+                <FolderLock className="w-4 h-4 shrink-0" />
+                <span>Audit Vault Export Logs</span>
+              </NavLink>
             </div>
           )}
 
@@ -128,6 +132,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <NavLink to="/qa/dashboard" className={linkClass}>
                 <LayoutDashboard className="w-4 h-4 shrink-0" />
                 <span>QA Review Engagements</span>
+              </NavLink>
+              <NavLink to="/qa/export-logs" className={linkClass}>
+                <FolderLock className="w-4 h-4 shrink-0" />
+                <span>Audit Vault Export Logs</span>
               </NavLink>
             </div>
           )}

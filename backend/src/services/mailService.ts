@@ -33,9 +33,13 @@ export class MailService {
     `;
   }
 
+  private getSenderEmail(): string {
+    return process.env.ADMIN_EMAIL || 'security@panaceainfosec.com';
+  }
+
   public async sendPasswordResetMail(toEmail: string, fullName: string, temporaryPassword: string): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const html = this.wrapTemplate(
         'Password Changed!',
         `
@@ -70,7 +74,7 @@ export class MailService {
 
   public async sendAccountWelcomeMail(toEmail: string, fullName: string, temporaryPassword: string, roleName: string): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const html = this.wrapTemplate(
         'Welcome to Panacea Infosec Portal',
         `
@@ -118,7 +122,7 @@ export class MailService {
     endDate?: string
   ): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const toStr = Array.isArray(to) ? to.join(', ') : to;
       if (!toStr) return true;
 
@@ -172,7 +176,7 @@ export class MailService {
     fileCount: number
   ): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const toStr = Array.isArray(to) ? to.join(', ') : to;
       if (!toStr) return true;
 
@@ -228,7 +232,7 @@ export class MailService {
     comments?: string
   ): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const toStr = Array.isArray(to) ? to.join(', ') : to;
       if (!toStr) return true;
 
@@ -285,7 +289,7 @@ export class MailService {
     commentText: string
   ): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const toStr = Array.isArray(to) ? to.join(', ') : to;
       if (!toStr) return true;
 
@@ -338,7 +342,7 @@ export class MailService {
     year: number | string
   ): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const toStr = Array.isArray(to) ? to.join(', ') : to;
       if (!toStr) return true;
 
@@ -394,7 +398,7 @@ export class MailService {
     }
   ): Promise<boolean> {
     try {
-      const from = process.env.ADMIN_EMAIL || 'mukul@tekshapers.com';
+      const from = this.getSenderEmail();
       const toStr = Array.isArray(to) ? to.join(', ') : to;
       if (!toStr) return true;
 
