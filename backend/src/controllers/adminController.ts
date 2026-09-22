@@ -184,6 +184,7 @@ export class AdminController {
         return;
       }
       user.status = UserStatus.DELETE;
+      user.tokenVersion = (user.tokenVersion || 0) + 1;
       await user.save();
       res.status(200).json({ success: true, message: 'Customer account deleted.' });
     } catch (error: any) {
@@ -217,6 +218,7 @@ export class AdminController {
       const temporaryPassword = crypto.randomBytes(8).toString('base64url');
       targetUser.passwordHash = await bcrypt.hash(temporaryPassword, 10);
       targetUser.legacyMd5Hash = '';
+      targetUser.tokenVersion = (targetUser.tokenVersion || 0) + 1;
 
       await targetUser.save();
 
@@ -505,6 +507,7 @@ export class AdminController {
       }
 
       user.status = UserStatus.DELETE;
+      user.tokenVersion = (user.tokenVersion || 0) + 1;
       await user.save();
       res.status(200).json({ success: true, message: `${user.fullName} deleted successfully.` });
     } catch (error: any) {

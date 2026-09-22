@@ -72,13 +72,14 @@ export class AuthController {
       user.lastLogin = new Date();
       await user.save();
 
-      // Sign JWT
+      // Sign JWT with tokenVersion for session revocation
       const token = jwt.sign(
         {
           id: user._id,
           userType: user.userType,
           email: user.email,
           fullName: user.fullName,
+          tokenVersion: user.tokenVersion || 0,
         },
         AUTH_CONFIG.JWT_SECRET,
         {
@@ -185,6 +186,7 @@ export class AuthController {
 
       user.passwordHash = await bcrypt.hash(temporaryPassword, 10);
       user.legacyMd5Hash = ''; // Purge legacy MD5
+      user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate any existing sessions
       await user.save();
 
       res.status(200).json({
@@ -222,6 +224,7 @@ export class AuthController {
 
       user.passwordHash = await bcrypt.hash(newPassword, 10);
       user.legacyMd5Hash = '';
+      user.tokenVersion = (user.tokenVersion || 0) + 1; // Invalidate all prior sessions
       await user.save();
 
       res.status(200).json({ success: true, message: 'Password updated successfully.' });

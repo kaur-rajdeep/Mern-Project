@@ -87,12 +87,13 @@ export class CustomerController {
       const user = req.user!;
       const customerId = user.parentId || user._id;
 
+      const safeProcessId = processId ? String(processId) : '';
       const numServiceId = Number(serviceId);
       const questionnaires = await Questionnaire.find({ serviceId: numServiceId, status: '1' }).sort({ legacyId: 1 });
 
       // Fetch existing reviews
       const reviews = await EvidenceReview.find({
-        processId,
+        processId: safeProcessId,
         serviceId: numServiceId,
         customerId,
       });
@@ -362,7 +363,7 @@ export class CustomerController {
 
       const filter: any = { customerId };
       if (year) filter.year = Number(year);
-      if (processId) filter.processId = processId;
+      if (processId) filter.processId = String(processId);
       if (serviceId) filter.serviceId = Number(serviceId);
 
       const reports = await ComplianceReport.find(filter)

@@ -8,6 +8,7 @@ import {
   TestingService,
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { UserType } from '../constants/roles';
 
 /**
  * Standalone helper — extracted outside the class to avoid `this`-binding
@@ -60,16 +61,50 @@ async function computeEngagementStats(
 }
 
 export class AnalyticsController {
-  public getProcessStats = async (req: Request, res: Response): Promise<void> => {
+  public getProcessStats = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { serviceId, customerId, processId } = req.body;
+      const { serviceId, customerId: reqCustomerId, processId } = req.body;
+      const user = req.user;
       const numServiceId = Number(serviceId);
+
+      let targetCustomerId = reqCustomerId;
+
+      // MED-01: Multi-tenant scoping and project assignment verification
+      if (user) {
+        if (user.userType === UserType.CUSTOMER) {
+          // Strict tenant scoping: Customer can ONLY query their own organization's stats
+          targetCustomerId = (user.parentId || user._id).toString();
+        } else if (
+          user.userType === UserType.QSA ||
+          user.userType === UserType.QA ||
+          user.userType === UserType.CONSULTANT
+        ) {
+          // Assessor scoping: Verify project assignment
+          const isAssigned = await ComplianceProject.exists({
+            processId,
+            serviceId: numServiceId,
+            customerId: targetCustomerId,
+            $or: [
+              { qsaId: user._id },
+              { qaId: user._id },
+              { consultantId: user._id },
+            ],
+          });
+          if (!isAssigned) {
+            res.status(403).json({
+              success: false,
+              message: 'Forbidden. You are not assigned to this compliance project.',
+            });
+            return;
+          }
+        }
+      }
 
       const totalQuestions = await Questionnaire.countDocuments({ serviceId: numServiceId, status: '1' });
 
       const reviews = await EvidenceReview.find({
         serviceId: numServiceId,
-        customerId,
+        customerId: targetCustomerId,
         processId,
       });
 

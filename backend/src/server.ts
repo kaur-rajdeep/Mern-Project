@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import routes from './routes';
 import { AUTH_CONFIG } from './config/auth';
 import { apiLimiter } from './middleware/rateLimiter';
+import { mongoSanitize } from './middleware/mongoSanitize';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(mongoSanitize);
 
 // Database Connection Management
 let isConnecting = false;

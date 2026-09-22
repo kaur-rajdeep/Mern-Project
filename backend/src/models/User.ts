@@ -20,6 +20,7 @@ export interface IUser extends Document {
   isCertificateVerified: number;
   uniqueId?: string;
   permissions?: string;
+  tokenVersion?: number;
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -55,6 +56,7 @@ const UserSchema = new Schema<IUser>(
     isCertificateVerified: { type: Number, default: 0 },
     uniqueId: { type: String, default: '' },
     permissions: { type: String, default: '' },
+    tokenVersion: { type: Number, default: 0 },
     lastLogin: { type: Date },
   },
   {

@@ -34,11 +34,21 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
     const decoded = jwt.verify(token, AUTH_CONFIG.JWT_SECRET, {
       algorithms: [AUTH_CONFIG.JWT_ALGORITHM],
-    }) as { id: string; userType: number };
+    }) as { id: string; userType: number; tokenVersion?: number };
 
     const user = await User.findById(decoded.id);
     if (!user || user.status !== 'active') {
       res.status(401).json({ success: false, message: 'Invalid or deactivated user account.' });
+      return;
+    }
+
+    // MED-03: Session revocation check - verify that token version matches current active version
+    if (
+      decoded.tokenVersion !== undefined &&
+      user.tokenVersion !== undefined &&
+      decoded.tokenVersion !== user.tokenVersion
+    ) {
+      res.status(401).json({ success: false, message: 'Session has been revoked. Please log in again.' });
       return;
     }
 
