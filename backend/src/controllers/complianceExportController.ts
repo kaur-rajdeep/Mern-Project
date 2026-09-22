@@ -16,6 +16,7 @@ import {
   AssessorDocument,
   EvidenceReview,
   EvidenceDownloadLog,
+  ComplianceProject,
 } from '../models';
 import { formatErrorMessage } from '../utils/formatError';
 import { mailService } from '../services/mailService';
@@ -121,6 +122,43 @@ export class ComplianceExportController {
       }
 
       const targetCustomerId = reqCustomerId || process.customerId;
+
+      // CRIT-02: BOLA / IDOR Verification - Ensure non-admin assessors are assigned to this project
+      if (user.userType !== UserType.ADMIN) {
+        const isAssigned = await ComplianceProject.exists({
+          processId,
+          serviceId: numServiceId,
+          customerId: targetCustomerId,
+          $or: [
+            { qsaId: user._id },
+            { qaId: user._id },
+            { consultantId: user._id },
+          ],
+        });
+
+        if (!isAssigned) {
+          await EvidenceDownloadLog.create({
+            userId: user._id,
+            userName: user.fullName,
+            userEmail: user.email,
+            userRole: user.userType,
+            processId,
+            serviceId: numServiceId,
+            customerId: targetCustomerId,
+            ipAddress,
+            userAgent,
+            status: 'FAILED_FORBIDDEN',
+            failureReason: 'Assessor is not assigned to this compliance project.',
+          });
+
+          res.status(403).json({
+            success: false,
+            message: 'Forbidden. You are not assigned to this compliance project.',
+          });
+          return;
+        }
+      }
+
       const customer = await User.findById(targetCustomerId);
       const service = await ComplianceService.findOne({ legacyId: numServiceId });
       const serviceName = service?.serviceName || `Compliance Service #${numServiceId}`;
@@ -374,10 +412,12 @@ export class ComplianceExportController {
         const qId = doc.questionnaireId.toString();
         const questionIdx = questionnaires.findIndex((q) => q._id.toString() === qId);
         const reqPrefix = `Req_${questionIdx !== -1 ? questionIdx + 1 : 'General'}`;
-        const storedFilename = doc.docs;
-        const targetFilename = doc.originalFilename || doc.docs;
+        const storedFilename = path.basename(doc.docs);
+        const rawTargetFilename = doc.originalFilename || doc.docs;
+        // CRIT-03: Mitigate Zip Slip by strictly stripping directory traversal sequences
+        const safeTargetFilename = path.basename(rawTargetFilename).replace(/[^a-zA-Z0-9._-]/g, '_');
 
-        const zipEntryPath = `Evidence_Documents/${reqPrefix}/${targetFilename}`;
+        const zipEntryPath = `Evidence_Documents/${reqPrefix}/${safeTargetFilename}`;
 
         const exists = await storageService.fileExists('evidence', storedFilename);
         if (exists) {
@@ -386,13 +426,13 @@ export class ComplianceExportController {
             archive.append(fileData.stream, { name: zipEntryPath });
             includedFileCount++;
           } catch {
-            const stubContent = `Panacea Infosec Compliance Evidence Record\nDocument: ${targetFilename}\nRequirement: ${reqPrefix}\nChecksum: ${doc.sha256Checksum || 'VERIFIED'}\nTimestamp: ${doc.createdAt}\nStatus: Vault Verified Record.`;
+            const stubContent = `Panacea Infosec Compliance Evidence Record\nDocument: ${safeTargetFilename}\nRequirement: ${reqPrefix}\nChecksum: ${doc.sha256Checksum || 'VERIFIED'}\nTimestamp: ${doc.createdAt}\nStatus: Vault Verified Record.`;
             archive.append(stubContent, { name: zipEntryPath });
             includedFileCount++;
           }
         } else {
           // If file not physically on disk or S3 (e.g. sample seeded record), append tamper-proof audit stub
-          const stubContent = `Panacea Infosec Compliance Evidence Record\nDocument: ${targetFilename}\nRequirement: ${reqPrefix}\nChecksum: ${doc.sha256Checksum || 'VERIFIED'}\nTimestamp: ${doc.createdAt}\nStatus: Vault Verified Record.`;
+          const stubContent = `Panacea Infosec Compliance Evidence Record\nDocument: ${safeTargetFilename}\nRequirement: ${reqPrefix}\nChecksum: ${doc.sha256Checksum || 'VERIFIED'}\nTimestamp: ${doc.createdAt}\nStatus: Vault Verified Record.`;
           archive.append(stubContent, { name: zipEntryPath });
           includedFileCount++;
         }
@@ -400,30 +440,32 @@ export class ComplianceExportController {
 
       // Append Assessor / Consultant Supplementary Documents
       for (const aDoc of assessorDocs) {
-        const targetFilename = aDoc.originalFilename || aDoc.docs;
+        const rawTargetFilename = aDoc.originalFilename || aDoc.docs;
+        const safeTargetFilename = path.basename(rawTargetFilename).replace(/[^a-zA-Z0-9._-]/g, '_');
+        const storedFilename = path.basename(aDoc.docs);
         const candidateFolders = ['qsa', 'consultants', 'qa'];
         let foundFolder: string | null = null;
 
         for (const f of candidateFolders) {
-          if (await storageService.fileExists(f, aDoc.docs)) {
+          if (await storageService.fileExists(f, storedFilename)) {
             foundFolder = f;
             break;
           }
         }
 
-        const zipEntryPath = `Assessor_Workpapers/${targetFilename}`;
+        const zipEntryPath = `Assessor_Workpapers/${safeTargetFilename}`;
         if (foundFolder) {
           try {
-            const fileData = await storageService.getFileStream(foundFolder, aDoc.docs);
+            const fileData = await storageService.getFileStream(foundFolder, storedFilename);
             archive.append(fileData.stream, { name: zipEntryPath });
             includedFileCount++;
           } catch {
-            const stubContent = `Panacea Infosec Assessor Workpaper Record\nDocument: ${targetFilename}\nTimestamp: ${aDoc.createdAt}\nStatus: Vault Verified Assessor Record.`;
+            const stubContent = `Panacea Infosec Assessor Workpaper Record\nDocument: ${safeTargetFilename}\nTimestamp: ${aDoc.createdAt}\nStatus: Vault Verified Assessor Record.`;
             archive.append(stubContent, { name: zipEntryPath });
             includedFileCount++;
           }
         } else {
-          const stubContent = `Panacea Infosec Assessor Workpaper Record\nDocument: ${targetFilename}\nTimestamp: ${aDoc.createdAt}\nStatus: Vault Verified Assessor Record.`;
+          const stubContent = `Panacea Infosec Assessor Workpaper Record\nDocument: ${safeTargetFilename}\nTimestamp: ${aDoc.createdAt}\nStatus: Vault Verified Assessor Record.`;
           archive.append(stubContent, { name: zipEntryPath });
           includedFileCount++;
         }

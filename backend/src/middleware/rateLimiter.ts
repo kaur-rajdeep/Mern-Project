@@ -5,6 +5,17 @@ const SERVER_BUSY_MESSAGE = {
   message: 'Servers are currently busy. Please try again later.',
 };
 
+// Rate-limit test bypass is strictly prohibited in production environments
+const isTestOrDevBypassAllowed =
+  process.env.NODE_ENV !== 'production' &&
+  (process.env.NODE_ENV === 'test' ||
+    process.env.ENABLE_TEST_BYPASS === 'true' ||
+    process.env.NODE_ENV === 'development');
+
+const shouldBypass = (req: any): boolean => {
+  return isTestOrDevBypassAllowed && req.headers['x-test-bypass'] === 'true';
+};
+
 // Strict limiter for authentication endpoints (login)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -12,7 +23,7 @@ export const authLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: SERVER_BUSY_MESSAGE,
-  skip: (req) => req.headers['x-test-bypass'] === 'true',
+  skip: shouldBypass,
 });
 
 // Stricter limiter specifically for forgot-password requests to prevent abuse/spam
@@ -22,7 +33,7 @@ export const forgotPasswordLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: SERVER_BUSY_MESSAGE,
-  skip: (req) => req.headers['x-test-bypass'] === 'true',
+  skip: shouldBypass,
 });
 
 // Upload endpoint limiter to prevent storage flooding
@@ -32,7 +43,7 @@ export const uploadLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: SERVER_BUSY_MESSAGE,
-  skip: (req) => req.headers['x-test-bypass'] === 'true',
+  skip: shouldBypass,
 });
 
 // General API protection limiter
@@ -42,5 +53,5 @@ export const apiLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: SERVER_BUSY_MESSAGE,
-  skip: (req) => req.headers['x-test-bypass'] === 'true',
+  skip: shouldBypass,
 });

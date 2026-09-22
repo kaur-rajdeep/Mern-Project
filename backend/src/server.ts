@@ -26,10 +26,17 @@ app.use(
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/panaceainfosec';
 
-// Robust CORS handling for multi-domain production deployments
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-  : ['http://localhost:5173'];
+// Strict CORS origin handling for production & multi-domain deployments
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+];
+const envOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+  : [];
+const allowedOrigins = Array.from(new Set([...defaultDevOrigins, ...envOrigins]));
 
 app.use(
   cors({
@@ -39,7 +46,7 @@ app.use(
       if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive fallback for standard browser clients
+      return callback(new Error(`CORS blocked: Origin '${origin}' is not authorized.`), false);
     },
     credentials: true,
   })

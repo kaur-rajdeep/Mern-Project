@@ -56,8 +56,9 @@ export class AuthController {
         const md5Input = crypto.createHash('md5').update(password).digest('hex');
         if (md5Input === user.legacyMd5Hash) {
           isPasswordMatch = true;
-          // Upgrade to bcrypt
+          // Upgrade to bcrypt and permanently clear legacy MD5 hash
           user.passwordHash = await bcrypt.hash(password, 10);
+          user.legacyMd5Hash = '';
           await user.save();
         }
       }
@@ -163,13 +164,28 @@ export class AuthController {
         return;
       }
 
-      // SEC-009: Generate high-entropy 12-character temporary password
-      const temporaryPassword = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, 'x').substring(0, 12);
-      user.passwordHash = await bcrypt.hash(temporaryPassword, 10);
-      user.legacyMd5Hash = crypto.createHash('md5').update(temporaryPassword).digest('hex');
-      await user.save();
+      // Generate high-entropy 16-character temporary password
+      const randomChars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+      const randomBytes = crypto.randomBytes(16);
+      let temporaryPassword = '';
+      for (let i = 0; i < 16; i++) {
+        temporaryPassword += randomChars[randomBytes[i] % randomChars.length];
+      }
 
-      await mailService.sendPasswordResetMail(user.email, user.fullName, temporaryPassword);
+      // Dispatch password recovery mail before overwriting account password in database
+      // to avoid permanent lockout if mail transport is degraded
+      const mailSent = await mailService.sendPasswordResetMail(user.email, user.fullName, temporaryPassword);
+      if (!mailSent && process.env.SMTP_USER) {
+        res.status(500).json({
+          success: false,
+          message: 'Password recovery notification service is temporarily unavailable. Please try again later.',
+        });
+        return;
+      }
+
+      user.passwordHash = await bcrypt.hash(temporaryPassword, 10);
+      user.legacyMd5Hash = ''; // Purge legacy MD5
+      await user.save();
 
       res.status(200).json({
         success: true,
@@ -205,7 +221,7 @@ export class AuthController {
       }
 
       user.passwordHash = await bcrypt.hash(newPassword, 10);
-      user.legacyMd5Hash = crypto.createHash('md5').update(newPassword).digest('hex');
+      user.legacyMd5Hash = '';
       await user.save();
 
       res.status(200).json({ success: true, message: 'Password updated successfully.' });

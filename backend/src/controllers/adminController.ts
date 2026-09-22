@@ -106,9 +106,8 @@ export class AdminController {
         }
       }
 
-      const rawPassword = password || crypto.randomBytes(3).toString('hex');
+      const rawPassword = password || crypto.randomBytes(8).toString('base64url');
       const passwordHash = await bcrypt.hash(rawPassword, 10);
-      const legacyMd5 = crypto.createHash('md5').update(rawPassword).digest('hex');
 
       // Find max legacyId to assign sequentially
       const maxUser = await User.findOne().sort({ legacyId: -1 });
@@ -123,7 +122,7 @@ export class AdminController {
         companyNumber,
         address,
         passwordHash,
-        legacyMd5Hash: legacyMd5,
+        legacyMd5Hash: '',
         userType: UserType.CUSTOMER,
         status: UserStatus.ACTIVE,
       });
@@ -166,7 +165,7 @@ export class AdminController {
 
       if (password) {
         user.passwordHash = await bcrypt.hash(password, 10);
-        user.legacyMd5Hash = crypto.createHash('md5').update(password).digest('hex');
+        user.legacyMd5Hash = '';
       }
 
       await user.save();
@@ -215,7 +214,7 @@ export class AdminController {
         return;
       }
 
-      const temporaryPassword = crypto.randomBytes(4).toString('hex');
+      const temporaryPassword = crypto.randomBytes(8).toString('base64url');
       targetUser.passwordHash = await bcrypt.hash(temporaryPassword, 10);
       targetUser.legacyMd5Hash = '';
 
@@ -338,9 +337,8 @@ export class AdminController {
         return;
       }
 
-      const rawPassword = password || crypto.randomBytes(3).toString('hex');
+      const rawPassword = password || crypto.randomBytes(8).toString('base64url');
       const passwordHash = await bcrypt.hash(rawPassword, 10);
-      const legacyMd5 = crypto.createHash('md5').update(rawPassword).digest('hex');
 
       const maxUser = await User.findOne().sort({ legacyId: -1 });
       const nextLegacyId = (maxUser?.legacyId || 0) + 1;
@@ -352,7 +350,7 @@ export class AdminController {
         phoneNumber,
         userType: Number(userType),
         passwordHash,
-        legacyMd5Hash: legacyMd5,
+        legacyMd5Hash: '',
         status: UserStatus.ACTIVE,
       });
 
