@@ -102,8 +102,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start listening in standalone/local environments
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Panacea Backend Server running on http://localhost:${PORT}`);
+  app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`🚀 Panacea Backend Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

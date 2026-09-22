@@ -31,7 +31,7 @@ async function setupTestUsers() {
   const adminEmail =
     process.env.ADMIN_EMAIL ||
     (isDev ? process.env.DEV_ADMIN_EMAIL : process.env.LOCAL_ADMIN_EMAIL) ||
-    'panacea@yopmail.com';
+    'panacea@endtest-mail.io';
   const adminPassword =
     process.env.ADMIN_PASSWORD ||
     (isDev ? process.env.DEV_ADMIN_PASSWORD : process.env.LOCAL_ADMIN_PASSWORD) ||
@@ -41,7 +41,7 @@ async function setupTestUsers() {
   const customerEmail =
     process.env.CUSTOMER_EMAIL ||
     (isDev ? process.env.DEV_CUSTOMER_EMAIL : process.env.LOCAL_CUSTOMER_EMAIL) ||
-    'customer@panaceatest.com';
+    'customer@endtest-mail.io';
   const customerPassword =
     process.env.CUSTOMER_PASSWORD ||
     (isDev ? process.env.DEV_CUSTOMER_PASSWORD : process.env.LOCAL_CUSTOMER_PASSWORD) ||
@@ -51,7 +51,7 @@ async function setupTestUsers() {
   const qsaEmail =
     process.env.QSA_EMAIL ||
     (isDev ? process.env.DEV_QSA_EMAIL : process.env.LOCAL_QSA_EMAIL) ||
-    'qsa@panaceatest.com';
+    'qsa@endtest-mail.io';
   const qsaPassword =
     process.env.QSA_PASSWORD ||
     (isDev ? process.env.DEV_QSA_PASSWORD : process.env.LOCAL_QSA_PASSWORD) ||
@@ -61,7 +61,7 @@ async function setupTestUsers() {
   const qaEmail =
     process.env.QA_EMAIL ||
     (isDev ? process.env.DEV_QA_EMAIL : process.env.LOCAL_QA_EMAIL) ||
-    'qa@panaceatest.com';
+    'qa@endtest-mail.io';
   const qaPassword =
     process.env.QA_PASSWORD ||
     (isDev ? process.env.DEV_QA_PASSWORD : process.env.LOCAL_QA_PASSWORD) ||
@@ -71,7 +71,7 @@ async function setupTestUsers() {
   const consultantEmail =
     process.env.CONSULTANT_EMAIL ||
     (isDev ? process.env.DEV_CONSULTANT_EMAIL : process.env.LOCAL_CONSULTANT_EMAIL) ||
-    'consultant@panaceatest.com';
+    'consultant@endtest-mail.io';
   const consultantPassword =
     process.env.CONSULTANT_PASSWORD ||
     (isDev ? process.env.DEV_CONSULTANT_PASSWORD : process.env.LOCAL_CONSULTANT_PASSWORD) ||
@@ -147,7 +147,4 @@ async function setupTestUsers() {
   await mongoose.disconnect();
 }
 
-setupTestUsers().catch((err) => {
-  console.error('Failed to setup test users:', err);
-  process.exit(1);
-});
+module.exports = setupTestUsers;

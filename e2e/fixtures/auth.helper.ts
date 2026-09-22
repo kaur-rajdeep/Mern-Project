@@ -21,7 +21,7 @@ export const TEST_USERS = {
     email:
       process.env.ADMIN_EMAIL ||
       (isDev ? process.env.DEV_ADMIN_EMAIL : process.env.LOCAL_ADMIN_EMAIL) ||
-      'panacea@yopmail.com',
+      'panacea@endtest-mail.io',
     password:
       process.env.ADMIN_PASSWORD ||
       (isDev ? process.env.DEV_ADMIN_PASSWORD : process.env.LOCAL_ADMIN_PASSWORD) ||
@@ -32,7 +32,7 @@ export const TEST_USERS = {
     email:
       process.env.CUSTOMER_EMAIL ||
       (isDev ? process.env.DEV_CUSTOMER_EMAIL : process.env.LOCAL_CUSTOMER_EMAIL) ||
-      'customer@panaceatest.com',
+      'customer@endtest-mail.io',
     password:
       process.env.CUSTOMER_PASSWORD ||
       (isDev ? process.env.DEV_CUSTOMER_PASSWORD : process.env.LOCAL_CUSTOMER_PASSWORD) ||
@@ -43,7 +43,7 @@ export const TEST_USERS = {
     email:
       process.env.QSA_EMAIL ||
       (isDev ? process.env.DEV_QSA_EMAIL : process.env.LOCAL_QSA_EMAIL) ||
-      'qsa@panaceatest.com',
+      'qsa@endtest-mail.io',
     password:
       process.env.QSA_PASSWORD ||
       (isDev ? process.env.DEV_QSA_PASSWORD : process.env.LOCAL_QSA_PASSWORD) ||
@@ -54,7 +54,7 @@ export const TEST_USERS = {
     email:
       process.env.QA_EMAIL ||
       (isDev ? process.env.DEV_QA_EMAIL : process.env.LOCAL_QA_EMAIL) ||
-      'qa@panaceatest.com',
+      'qa@endtest-mail.io',
     password:
       process.env.QA_PASSWORD ||
       (isDev ? process.env.DEV_QA_PASSWORD : process.env.LOCAL_QA_PASSWORD) ||
@@ -65,7 +65,7 @@ export const TEST_USERS = {
     email:
       process.env.CONSULTANT_EMAIL ||
       (isDev ? process.env.DEV_CONSULTANT_EMAIL : process.env.LOCAL_CONSULTANT_EMAIL) ||
-      'consultant@panaceatest.com',
+      'consultant@endtest-mail.io',
     password:
       process.env.CONSULTANT_PASSWORD ||
       (isDev ? process.env.DEV_CONSULTANT_PASSWORD : process.env.LOCAL_CONSULTANT_PASSWORD) ||
