@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, MessageSquare, User as UserIcon } from 'lucide-react';
 import { AuditComment } from '../../types';
 import api from '../../services/api';
@@ -24,6 +24,21 @@ export const ThreadedComments: React.FC<ThreadedCommentsProps> = ({
   const [comments, setComments] = useState<AuditComment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Track which comment IDs we already know about so the sync is additive
+  const knownIds = useRef(new Set(initialComments.map((c) => c._id)));
+
+  // When the parent refreshes auditData, merge any new server comments in
+  // without discarding optimistic ones we already appended locally.
+  useEffect(() => {
+    setComments((prev) => {
+      const localIds = new Set(prev.map((c) => c._id));
+      const newFromServer = initialComments.filter((c) => !localIds.has(c._id));
+      if (newFromServer.length === 0) return prev; // nothing changed
+      // Also track newly discovered IDs
+      newFromServer.forEach((c) => knownIds.current.add(c._id));
+      return [...prev, ...newFromServer];
+    });
+  }, [initialComments]);
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
