@@ -57,6 +57,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 8020,
+    allowedHosts: ['omen.radpretation.ai'],
 
     proxy: {
       '/api': {
