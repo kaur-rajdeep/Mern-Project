@@ -38,9 +38,6 @@ import path from 'path';
 export default defineConfig({
   root: path.resolve(__dirname),
 
-  // Important because the app is hosted at /pcm/
-  base: '/pcm/',
-
   plugins: [react()],
 
   resolve: {
@@ -57,7 +54,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 8020,
-    allowedHosts: ['omen.radpretation.ai'],
+
+    allowedHosts: ['pcm.radpretation.ai'],
 
     proxy: {
       '/api': {

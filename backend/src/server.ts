@@ -34,7 +34,6 @@ const defaultDevOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
   'https://pcm.radpretation.ai',
-  'https://omen.radpretation.ai'
 ];
 const envOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
