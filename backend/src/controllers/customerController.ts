@@ -16,6 +16,7 @@ import {
   ComplianceReport,
 } from '../models';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { UserType } from '../constants/roles';
 import { formatErrorMessage } from '../utils/formatError';
 import { mailService } from '../services/mailService';
 import { storageService } from '../services/storageService';
@@ -39,7 +40,13 @@ export class CustomerController {
       const user = req.user!;
       const customerId = user.parentId || user._id;
 
-      const process = await CustomerProcess.findById(processId);
+      let process;
+      if (user.userType === UserType.CUSTOMER) {
+        process = await CustomerProcess.findOne({ _id: processId, customerId });
+      } else {
+        process = await CustomerProcess.findById(processId);
+      }
+
       if (!process) {
         res.status(404).json({ success: false, message: 'Process not found.' });
         return;
@@ -150,6 +157,22 @@ export class CustomerController {
       const numServiceId = Number(serviceId);
 
       const files = req.files as Express.Multer.File[];
+
+      // BUG-01: Verify customer owns the process before persisting files or review state
+      const processExists = await CustomerProcess.exists({ _id: processId, customerId });
+      if (!processExists) {
+        if (files && files.length > 0) {
+          for (const file of files) {
+            try {
+              if (file.path && fs.existsSync(file.path)) {
+                await fs.promises.unlink(file.path);
+              }
+            } catch (_) {}
+          }
+        }
+        res.status(404).json({ success: false, message: 'Process not found or access denied.' });
+        return;
+      }
 
       // Upsert EvidenceReview state
       let review = await EvidenceReview.findOne({
@@ -285,6 +308,7 @@ export class CustomerController {
 
       // Precondition 2: Audit Trail Integrity Guard (Cannot delete if control is already approved)
       const review = await EvidenceReview.findOne({
+        processId: doc.processId,
         questionnaireId: doc.questionnaireId,
         customerId,
       });
@@ -312,6 +336,17 @@ export class CustomerController {
       const { processId, serviceId, questionnaireId } = req.body;
       const user = req.user!;
       const customerId = user.parentId || user._id;
+
+      // Verify that the supplied process belongs to the authenticated customer's effective tenant
+      const processExists = await CustomerProcess.exists({
+        _id: processId,
+        customerId,
+      });
+
+      if (!processExists) {
+        res.status(404).json({ success: false, message: 'Process not found or access denied.' });
+        return;
+      }
 
       let review = await EvidenceReview.findOne({
         processId,

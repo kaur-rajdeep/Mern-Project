@@ -532,10 +532,90 @@ export class ComplianceExportController {
    */
   public async getExportLogs(req: AuthRequest, res: Response): Promise<void> {
     try {
+      const user = req.user!;
       const { processId, serviceId } = req.query;
       const query: any = {};
-      if (processId) query.processId = processId;
-      if (serviceId) query.serviceId = Number(serviceId);
+
+      if (user.userType === UserType.ADMIN) {
+        if (processId) query.processId = processId;
+        if (serviceId) query.serviceId = Number(serviceId);
+      } else if (user.userType === UserType.QA) {
+        // Retrieve compliance projects assigned to this QA
+        const assignedProjects = await ComplianceProject.find({ qaId: user._id })
+          .select('customerId processId serviceId');
+
+        if (processId) {
+          const matchingProjects = (assignedProjects || []).filter(
+            (p) => p.processId.toString() === String(processId)
+          );
+          if (matchingProjects.length === 0) {
+            res.status(403).json({
+              success: false,
+              message: 'Forbidden. You are not assigned to this compliance project.',
+            });
+            return;
+          }
+
+          if (serviceId) {
+            const numServiceId = Number(serviceId);
+            const matchingWithService = matchingProjects.filter(
+              (p) => p.serviceId === numServiceId
+            );
+            if (matchingWithService.length === 0) {
+              res.status(403).json({
+                success: false,
+                message: 'Forbidden. You are not assigned to this compliance project.',
+              });
+              return;
+            }
+            query.$or = matchingWithService.map((p) => ({
+              customerId: p.customerId,
+              processId: p.processId,
+              serviceId: p.serviceId,
+            }));
+          } else {
+            query.$or = matchingProjects.map((p) => ({
+              customerId: p.customerId,
+              processId: p.processId,
+              serviceId: p.serviceId,
+            }));
+          }
+        } else {
+          // No processId provided: check if QA has any assignments
+          if (!assignedProjects || assignedProjects.length === 0) {
+            res.status(200).json({ success: true, logs: [], totalLogs: 0 });
+            return;
+          }
+
+          if (serviceId) {
+            const numServiceId = Number(serviceId);
+            const matchingWithService = assignedProjects.filter(
+              (p) => p.serviceId === numServiceId
+            );
+            if (matchingWithService.length === 0) {
+              res.status(200).json({ success: true, logs: [], totalLogs: 0 });
+              return;
+            }
+            query.$or = matchingWithService.map((p) => ({
+              customerId: p.customerId,
+              processId: p.processId,
+              serviceId: p.serviceId,
+            }));
+          } else {
+            query.$or = assignedProjects.map((p) => ({
+              customerId: p.customerId,
+              processId: p.processId,
+              serviceId: p.serviceId,
+            }));
+          }
+        }
+      } else {
+        res.status(403).json({
+          success: false,
+          message: 'Access denied. You do not have permission to view export logs.',
+        });
+        return;
+      }
 
       const logs = await EvidenceDownloadLog.find(query).sort({ downloadedAt: -1 }).limit(100);
       res.status(200).json({ success: true, logs, totalLogs: logs.length });
