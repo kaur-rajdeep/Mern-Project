@@ -1,0 +1,29 @@
+name: Deploy MERN Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Linux, X64, mern-production]
+
+    steps:
+      - name: Update server code
+        run: |
+          cd /var/www/html/Mern-Project
+          git pull origin main
+
+      - name: Build backend
+        run: |
+          cd /var/www/html/Mern-Project/backend
+          npm run build
+
+      - name: Restart backend
+        run: |
+          pm2 restart mern-backend
+
+      - name: Restart frontend
+        run: |
+          pm2 restart mern-frontend
