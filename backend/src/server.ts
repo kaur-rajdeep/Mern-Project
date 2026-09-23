@@ -15,7 +15,7 @@ dotenv.config();
 // Ensure reliable DNS resolution for MongoDB Atlas SRV records
 try {
   dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
-} catch (e) {}
+} catch (e) { }
 
 const app = express();
 app.disable('x-powered-by');
@@ -33,6 +33,7 @@ const defaultDevOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:3000',
   'http://localhost:5000',
+  'https://pcm.radpretation.ai/',
 ];
 const envOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
