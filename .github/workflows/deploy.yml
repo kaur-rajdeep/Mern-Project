@@ -19,7 +19,12 @@ jobs:
         run: |
           cd /var/www/html/Mern-Project/backend
           npm run build
-
+          
+      - name: Build frontend
+        run: |
+          cd /var/www/html/Mern-Project/frontend
+          npm run build
+          
       - name: Restart backend
         run: |
           pm2 restart mern-backend
