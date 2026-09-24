@@ -8,7 +8,7 @@ async function verifyEmailService() {
 
   // 1. Test Project Assignment
   const res1 = await mailService.sendProjectAssignmentMail(
-    ['qsa@audit.com', 'qa@audit.com'],
+    ['qsa@endtest-mail.io', 'qa@endtest-mail.io'],
     'Auditors Team',
     'PCI DSS Compliance v4.0',
     'Core Payment Processing',
@@ -21,7 +21,7 @@ async function verifyEmailService() {
 
   // 2. Test Evidence Submission
   const res2 = await mailService.sendEvidenceSubmissionMail(
-    'qsa@audit.com',
+    'qsa@endtest-mail.io',
     'John Assessor',
     'Acme Corp',
     'Core Payment Processing',
@@ -32,7 +32,7 @@ async function verifyEmailService() {
   console.log('2. Evidence Submission Mail sent:', res2);
 
   // 3. Test Common Review Status Mail on QA Disapproval (Single common email to Customer, QSA, Consultant)
-  const recipients = ['customer@acme.com', 'qsa@audit.com', 'consultant@advisory.com'];
+  const recipients = ['customer@endtest-mail.io', 'qsa@endtest-mail.io', 'consultant@endtest-mail.io'];
   const recipientNames = 'Acme Corp, John Assessor (QSA), Sarah Consultant (Consultant)';
   const res3 = await mailService.sendReviewStatusMail(
     recipients,
@@ -49,7 +49,7 @@ async function verifyEmailService() {
 
   // 4. Test Audit Comment Mail
   const res4 = await mailService.sendAuditCommentMail(
-    'customer@acme.com',
+    'customer@endtest-mail.io',
     'Acme Corp',
     'John Assessor',
     'QSA Auditor',
@@ -62,7 +62,7 @@ async function verifyEmailService() {
 
   // 5. Test Compliance Report Upload Mail
   const res5 = await mailService.sendComplianceReportUploadedMail(
-    'customer@acme.com',
+    'customer@endtest-mail.io',
     'Acme Corp',
     'ROC',
     'Core Payment Processing',
@@ -73,11 +73,11 @@ async function verifyEmailService() {
 
   // 6. Test Security Alert Mail for Bulk Export
   const res6 = await mailService.sendSecurityAlertMail(
-    'shivram.dutt@radpretation.ai',
+    'security@endtest-mail.io',
     'Full Compliance Evidence Package Exported',
     {
       requesterName: 'John Assessor',
-      requesterEmail: 'qsa@audit.com',
+      requesterEmail: 'qsa@endtest-mail.io',
       requesterRole: 'QSA',
       targetCustomer: 'Acme Corp',
       processName: 'Core Payment Processing',

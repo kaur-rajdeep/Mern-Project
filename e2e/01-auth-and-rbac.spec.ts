@@ -49,7 +49,7 @@ test.describe('Module 1: Authentication, Authorization & RBAC', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
 
-    await page.locator('input[type="email"]').fill('deactivated.user.probe@panaceatest.com');
+    await page.locator('input[type="email"]').fill('deactivated.user.probe@endtest-mail.io');
     await page.locator('input[type="password"]').fill('Password@123');
     await page.locator('button[type="submit"]').click();
 
@@ -87,7 +87,7 @@ test.describe('Module 1: Authentication, Authorization & RBAC', () => {
     await page.goto('/forgot-password');
     await page.waitForLoadState('networkidle');
 
-    await page.locator('input[type="email"]').fill('random.unknown.account@panaceatest.com');
+    await page.locator('input[type="email"]').fill('random.unknown.account@endtest-mail.io');
     await page.locator('button[type="submit"]').click();
 
     // UI displays confirmation screen without leaking account existence

@@ -14,10 +14,10 @@ test.describe('Module 3: Super Administrator — Security Assessors & Project As
   const timestamp = Date.now();
   const suffix = randomLetters(6);
   const testQsaName = `Assessor QSA ${suffix}`;
-  const testQsaEmail = `qsa.test_${timestamp}@panaceatest.com`;
+  const testQsaEmail = `qsa.test_${timestamp}@endtest-mail.io`;
 
   const testUnassignedName = `Unassigned Assessor ${suffix}`;
-  const testUnassignedEmail = `unassigned.test_${timestamp}@panaceatest.com`;
+  const testUnassignedEmail = `unassigned.test_${timestamp}@endtest-mail.io`;
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, TEST_USERS.ADMIN.email, TEST_USERS.ADMIN.password, TEST_USERS.ADMIN.expectedPath);
@@ -52,7 +52,7 @@ test.describe('Module 3: Super Administrator — Security Assessors & Project As
     let modal = page.locator('div.fixed', { hasText: /Add Security Assessor/i });
     await modal.locator('select').selectOption('3'); // QA Auditor
     await modal.locator('input').nth(0).fill(qaName);
-    await modal.locator('input[type="email"]').fill(`qa.test_${timestamp}@panaceatest.com`);
+    await modal.locator('input[type="email"]').fill(`qa.test_${timestamp}@endtest-mail.io`);
     await modal.locator('input').nth(2).fill('9876543210');
     await modal.locator('input[placeholder*="auto-generated" i]').fill('Password@123');
     await modal.locator('button[type="submit"]').click();
@@ -63,7 +63,7 @@ test.describe('Module 3: Super Administrator — Security Assessors & Project As
     modal = page.locator('div.fixed', { hasText: /Add Security Assessor/i });
     await modal.locator('select').selectOption('4'); // Consultant
     await modal.locator('input').nth(0).fill(consName);
-    await modal.locator('input[type="email"]').fill(`consultant.test_${timestamp}@panaceatest.com`);
+    await modal.locator('input[type="email"]').fill(`consultant.test_${timestamp}@endtest-mail.io`);
     await modal.locator('input').nth(2).fill('9876543210');
     await modal.locator('input[placeholder*="auto-generated" i]').fill('Password@123');
     await modal.locator('button[type="submit"]').click();

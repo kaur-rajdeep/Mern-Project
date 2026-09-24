@@ -61,7 +61,7 @@ test.describe('Module 4: Super Administrator — Compliance Project Workspace & 
 
   test('PROJ-03, PROJ-04 & PROJ-05: Project Details Workspace, Progress Counter & Milestones', async ({ page }) => {
     // Open the first active project details
-    const viewBtn = page.locator('button:has-text("Audit View"), a:has-text("Audit View"), a[href*="/admin/compliances/"]').first();
+    const viewBtn = page.locator('button[title="Audit View"], button[aria-label="Audit View"], button:has-text("Audit View"), a:has-text("Audit View"), a[href*="/admin/compliances/"]').first();
     if (await viewBtn.isVisible()) {
       await viewBtn.click();
       await page.waitForLoadState('networkidle');
@@ -113,6 +113,38 @@ test.describe('Module 4: Super Administrator — Compliance Project Workspace & 
         await expect(batchBtn).toBeVisible();
       }
     }
+  });
+
+  test('PROJ-10: Project Reassignment and Assessor Unassignment Flow', async ({ page }) => {
+    // Verify Reassign button exists on project row
+    const reassignBtn = page.locator('button[title*="Reassign"], button[aria-label*="Reassign"], button:has-text("Reassign")').first();
+    await expect(reassignBtn).toBeVisible({ timeout: 8000 });
+    await reassignBtn.click();
+
+    // Verify Reassign modal opens
+    const modal = page.locator('div.fixed', { hasText: /Reassign Project Assessors/i });
+    await expect(modal).toBeVisible();
+
+    // Verify Framework and Scope overview is shown
+    await expect(modal.locator('text=Framework:')).toBeVisible();
+    await expect(modal.locator('text=Customer:')).toBeVisible();
+
+    // Verify QSA dropdown has "None (Unassigned / Remove)" option
+    const qsaSelect = modal.locator('select').first();
+    await expect(qsaSelect).toBeVisible();
+    await expect(qsaSelect.locator('option', { hasText: /Unassigned|Remove|None/i })).toBeAttached();
+
+    // Close reassign modal
+    await modal.locator('button:has-text("Cancel"), button:has(svg.lucide-x)').first().click();
+    await expect(modal).toBeHidden();
+
+    // Open Audit View and verify "Reassign Team" button is present
+    const auditBtn = page.locator('button[title*="Audit View"], button[aria-label*="Audit View"], button:has-text("Audit View")').first();
+    await auditBtn.click();
+    await page.waitForLoadState('networkidle');
+
+    const reassignTeamBtn = page.locator('button:has-text("Reassign Team")');
+    await expect(reassignTeamBtn).toBeVisible({ timeout: 8000 });
   });
 
 });

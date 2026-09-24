@@ -4,7 +4,7 @@ import { TEST_USERS, loginAs } from './fixtures/auth.helper';
 test.describe('Module 2: Super Administrator — Customer & Process Scope Management', () => {
   const timestamp = Date.now();
   const testCompanyName = `Nova Compliance Corp ${timestamp}`;
-  const testEmail = `nova.poc_${timestamp}@novatest.com`;
+  const testEmail = `nova.poc_${timestamp}@endtest-mail.io`;
   const testProcessName = `Payment Vault Alpha ${timestamp}`;
 
   test.beforeEach(async ({ page }) => {

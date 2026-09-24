@@ -7,11 +7,11 @@ export interface ITestingProject extends Document {
   legacyCustomerId?: number;
   processId: mongoose.Types.ObjectId;
   legacyProcessId?: number;
-  qsaId: mongoose.Types.ObjectId;
+  qsaId?: mongoose.Types.ObjectId | null;
   legacyQsaId?: number;
-  consultantId: mongoose.Types.ObjectId;
+  consultantId?: mongoose.Types.ObjectId | null;
   legacyConsultantId?: number;
-  qaId: mongoose.Types.ObjectId;
+  qaId?: mongoose.Types.ObjectId | null;
   legacyQaId?: number;
   startDate: string;
   endDate: string;
@@ -28,11 +28,11 @@ const TestingProjectSchema = new Schema<ITestingProject>(
     legacyCustomerId: { type: Number },
     processId: { type: Schema.Types.ObjectId, ref: 'CustomerProcess', required: true, index: true },
     legacyProcessId: { type: Number },
-    qsaId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    qsaId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     legacyQsaId: { type: Number },
-    consultantId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    consultantId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     legacyConsultantId: { type: Number },
-    qaId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    qaId: { type: Schema.Types.ObjectId, ref: 'User', default: null, index: true },
     legacyQaId: { type: Number },
     startDate: { type: String, default: '' },
     endDate: { type: String, default: '' },

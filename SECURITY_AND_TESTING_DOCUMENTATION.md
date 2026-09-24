@@ -266,11 +266,11 @@ Run `node e2e/setup-test-users.js` at any time to initialize test accounts:
 
 | Role | Email | Password | Target URL |
 | :--- | :--- | :--- | :--- |
-| **Super Admin** | `panacea@yopmail.com` | `guru@1234` | `/admin/dashboard` |
-| **Customer POC** | `customer@panaceatest.com` | `Password@123` | `/customer/dashboard` |
-| **QSA Assessor** | `qsa@panaceatest.com` | `Password@123` | `/qsa/dashboard` |
-| **QA Auditor** | `qa@panaceatest.com` | `Password@123` | `/qa/dashboard` |
-| **Consultant** | `consultant@panaceatest.com` | `Password@123` | `/consultant/dashboard` |
+| **Super Admin** | `panacea@endtest-mail.io` | `guru@1234` | `/admin/dashboard` |
+| **Customer POC** | `customer@endtest-mail.io` | `Password@123` | `/customer/dashboard` |
+| **QSA Assessor** | `qsa@endtest-mail.io` | `Password@123` | `/qsa/dashboard` |
+| **QA Auditor** | `qa@endtest-mail.io` | `Password@123` | `/qa/dashboard` |
+| **Consultant** | `consultant@endtest-mail.io` | `Password@123` | `/consultant/dashboard` |
 
 ### Rate Limiting Bypass Header (`x-test-bypass`)
 To prevent automated UI test runs from being throttled by production rate limiters when logging in multiple times, [playwright.config.ts](file:///c:/xampp/htdocs/PanaceaProject/mern%20project/playwright.config.ts) automatically attaches `x-test-bypass: true`.

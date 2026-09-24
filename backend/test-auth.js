@@ -45,12 +45,11 @@ function get(path, token) {
 
 async function run() {
   const users = [
-    { name: 'Admin', email: 'panacea@yopmail.com', pass: 'guru@1234', dash: '/api/admin/dashboard-stats' },
-    { name: 'QSA', email: 'qsa@yopmail.com', pass: '123456', dash: '/api/qsa/dashboard' },
-    { name: 'QA', email: 'qa@yopmail.com', pass: '123456', dash: '/api/qa/dashboard' },
-    { name: 'Consultant', email: 'consultants@yopmail.com', pass: '1542436640', dash: '/api/consultant/dashboard' },
-    { name: 'Customer (Priya)', email: 'priya1@tekshapers.com', pass: '1542956972', dash: '/api/customer/dashboard' },
-    { name: 'Customer (Test)', email: 'testcustomer@yopmail.com', pass: '1544766203', dash: '/api/customer/dashboard' },
+    { name: 'Admin', email: 'panacea@endtest-mail.io', pass: 'guru@1234', dash: '/api/admin/dashboard-stats' },
+    { name: 'Customer', email: 'customer@endtest-mail.io', pass: 'Password@123', dash: '/api/customer/dashboard' },
+    { name: 'QSA', email: 'qsa@endtest-mail.io', pass: 'Password@123', dash: '/api/qsa/dashboard' },
+    { name: 'QA', email: 'qa@endtest-mail.io', pass: 'Password@123', dash: '/api/qa/dashboard' },
+    { name: 'Consultant', email: 'consultant@endtest-mail.io', pass: 'Password@123', dash: '/api/consultant/dashboard' },
   ];
 
   console.log('=== TESTING ROLE AUTHENTICATION WITHOUT CERTIFICATES ===');

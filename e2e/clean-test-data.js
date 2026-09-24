@@ -50,6 +50,7 @@ async function cleanTestData(filter = {}) {
           { email: { $regex: '^qa\\.test_', $options: 'i' } },
           { email: { $regex: '^consultant\\.test_', $options: 'i' } },
           { email: { $regex: '^unassigned\\.test_', $options: 'i' } },
+          { email: { $regex: '@example\\.com$', $options: 'i' } },
           { companyName: { $regex: '^Apex Global Payments', $options: 'i' } },
           { companyName: { $regex: '^Nova Compliance Corp', $options: 'i' } },
         ],

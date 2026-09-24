@@ -50,7 +50,7 @@ async function seedFresh() {
     // 1. Insert Base Admin User
     console.log('Inserting base Admin user...');
     const adminUser = new User({
-      email: "panacea@yopmail.com",
+      email: "panacea@endtest-mail.io",
       // BCrypt hash for "guru@1234"
       passwordHash: "$2a$10$NKN0WW1kkLE1vKW7opYH7.JZjfh8S1ZREJYOiq3rp4FjUUDx6Xktu",
       fullName: "System Administrator",

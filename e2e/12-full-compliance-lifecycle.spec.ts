@@ -7,7 +7,7 @@ test.describe.serial('Module 12: Full Compliance Audit Lifecycle (Golden Path)',
   const timestamp = Date.now();
   const companyName = `Apex Global Payments ${timestamp}`;
   const pocName = 'David Miller POC';
-  const customerEmail = `david.poc_${timestamp}@apexpayments.com`;
+  const customerEmail = `david.poc_${timestamp}@endtest-mail.io`;
   const customerPassword = process.env.DEFAULT_TEST_PASSWORD || 'Password@123';
   const processName = `Core Payment Enclave ${timestamp}`;
   const samplePdfPath = path.resolve(__dirname, 'fixtures/sample_evidence.pdf');

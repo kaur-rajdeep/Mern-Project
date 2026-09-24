@@ -382,9 +382,9 @@ export class AdminController {
           { consultantId: user._id },
           ...(user.legacyId
             ? [
-                { legacyQsaId: user.legacyId },
-                { legacyQaId: user.legacyId },
-                { legacyConsultantId: user.legacyId },
+                { qsaId: null, legacyQsaId: user.legacyId },
+                { qaId: null, legacyQaId: user.legacyId },
+                { consultantId: null, legacyConsultantId: user.legacyId },
               ]
             : []),
         ],
@@ -399,9 +399,9 @@ export class AdminController {
           { consultantId: user._id },
           ...(user.legacyId
             ? [
-                { legacyQsaId: user.legacyId },
-                { legacyQaId: user.legacyId },
-                { legacyConsultantId: user.legacyId },
+                { qsaId: null, legacyQsaId: user.legacyId },
+                { qaId: null, legacyQaId: user.legacyId },
+                { consultantId: null, legacyConsultantId: user.legacyId },
               ]
             : []),
         ],
@@ -456,9 +456,9 @@ export class AdminController {
           { consultantId: user._id },
           ...(user.legacyId
             ? [
-                { legacyQsaId: user.legacyId },
-                { legacyQaId: user.legacyId },
-                { legacyConsultantId: user.legacyId },
+                { qsaId: null, legacyQsaId: user.legacyId },
+                { qaId: null, legacyQaId: user.legacyId },
+                { consultantId: null, legacyConsultantId: user.legacyId },
               ]
             : []),
         ],
@@ -475,9 +475,9 @@ export class AdminController {
           { consultantId: user._id },
           ...(user.legacyId
             ? [
-                { legacyQsaId: user.legacyId },
-                { legacyQaId: user.legacyId },
-                { legacyConsultantId: user.legacyId },
+                { qsaId: null, legacyQsaId: user.legacyId },
+                { qaId: null, legacyQaId: user.legacyId },
+                { consultantId: null, legacyConsultantId: user.legacyId },
               ]
             : []),
         ],
@@ -657,6 +657,215 @@ export class AdminController {
     }
   }
 
+  public async reassignComplianceProject(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { qsaId, qaId, consultantId, startDate, endDate } = req.body;
+
+      const project = await ComplianceProject.findById(id);
+      if (!project) {
+        res.status(404).json({ success: false, message: 'Compliance project not found.' });
+        return;
+      }
+
+      let newQsaUser: any = null;
+      let newQaUser: any = null;
+      let newConsultantUser: any = null;
+
+      // Handle QSA reassignment or unassignment
+      if (qsaId !== undefined) {
+        if (!qsaId || qsaId === 'unassigned' || qsaId === 'none') {
+          project.qsaId = null as any;
+          project.legacyQsaId = undefined;
+        } else {
+          const qsaUser = await User.findById(qsaId);
+          if (!qsaUser || qsaUser.status === UserStatus.DELETE) {
+            res.status(400).json({ success: false, message: 'Selected QSA assessor does not exist or has been deleted.' });
+            return;
+          }
+          if (qsaUser.userType !== UserType.QSA) {
+            res.status(400).json({ success: false, message: 'Selected user is not a Qualified Security Assessor (QSA).' });
+            return;
+          }
+          if (project.qsaId?.toString() !== qsaId) {
+            newQsaUser = qsaUser;
+          }
+          project.qsaId = qsaUser._id;
+          project.legacyQsaId = qsaUser.legacyId;
+        }
+      }
+
+      // Handle QA reassignment or unassignment
+      if (qaId !== undefined) {
+        if (!qaId || qaId === 'unassigned' || qaId === 'none') {
+          project.qaId = null as any;
+          project.legacyQaId = undefined;
+        } else {
+          const qaUser = await User.findById(qaId);
+          if (!qaUser || qaUser.status === UserStatus.DELETE) {
+            res.status(400).json({ success: false, message: 'Selected QA auditor does not exist or has been deleted.' });
+            return;
+          }
+          if (qaUser.userType !== UserType.QA) {
+            res.status(400).json({ success: false, message: 'Selected user is not a Quality Assurance (QA) auditor.' });
+            return;
+          }
+          if (project.qaId?.toString() !== qaId) {
+            newQaUser = qaUser;
+          }
+          project.qaId = qaUser._id;
+          project.legacyQaId = qaUser.legacyId;
+        }
+      }
+
+      // Handle Consultant reassignment or unassignment
+      if (consultantId !== undefined) {
+        if (!consultantId || consultantId === 'unassigned' || consultantId === 'none') {
+          project.consultantId = null as any;
+          project.legacyConsultantId = undefined;
+        } else {
+          const consUser = await User.findById(consultantId);
+          if (!consUser || consUser.status === UserStatus.DELETE) {
+            res.status(400).json({ success: false, message: 'Selected consultant does not exist or has been deleted.' });
+            return;
+          }
+          if (consUser.userType !== UserType.CONSULTANT) {
+            res.status(400).json({ success: false, message: 'Selected user is not a Compliance Consultant.' });
+            return;
+          }
+          if (project.consultantId?.toString() !== consultantId) {
+            newConsultantUser = consUser;
+          }
+          project.consultantId = consUser._id;
+          project.legacyConsultantId = consUser.legacyId;
+        }
+      }
+
+      if (startDate !== undefined) project.startDate = startDate;
+      if (endDate !== undefined) project.endDate = endDate;
+
+      await project.save();
+
+      // Trigger Project Assignment emails asynchronously for newly assigned team members
+      (async () => {
+        try {
+          if (newQsaUser || newQaUser || newConsultantUser) {
+            const [customer, processObj, serviceObj] = await Promise.all([
+              User.findById(project.customerId),
+              CustomerProcess.findById(project.processId),
+              ComplianceService.findOne({ legacyId: project.serviceId }),
+            ]);
+
+            const clientName = customer?.companyName || customer?.fullName || 'Customer';
+            const processName = processObj?.processName || 'General Process';
+            const serviceName = serviceObj?.serviceName || `Compliance Service #${project.serviceId}`;
+
+            if (newQsaUser?.email) {
+              await mailService.sendProjectAssignmentMail(
+                newQsaUser.email,
+                newQsaUser.fullName,
+                serviceName,
+                processName,
+                clientName,
+                'Qualified Security Assessor (QSA)',
+                project.startDate,
+                project.endDate
+              );
+            }
+            if (newQaUser?.email) {
+              await mailService.sendProjectAssignmentMail(
+                newQaUser.email,
+                newQaUser.fullName,
+                serviceName,
+                processName,
+                clientName,
+                'Quality Assurance (QA) Reviewer',
+                project.startDate,
+                project.endDate
+              );
+            }
+            if (newConsultantUser?.email) {
+              await mailService.sendProjectAssignmentMail(
+                newConsultantUser.email,
+                newConsultantUser.fullName,
+                serviceName,
+                processName,
+                clientName,
+                'Security Consultant',
+                project.startDate,
+                project.endDate
+              );
+            }
+          }
+        } catch (mailErr) {
+          console.error('Failed to send compliance project reassignment email:', mailErr);
+        }
+      })();
+
+      const updatedProject = await ComplianceProject.findById(id)
+        .populate('customerId', 'fullName companyName email')
+        .populate('processId', 'processName')
+        .populate('qsaId', 'fullName email')
+        .populate('qaId', 'fullName email')
+        .populate('consultantId', 'fullName email');
+
+      res.status(200).json({
+        success: true,
+        message: 'Compliance project assignees updated successfully.',
+        project: updatedProject,
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: formatErrorMessage(error) });
+    }
+  }
+
+  public async removeProjectAssignee(req: Request, res: Response): Promise<void> {
+    try {
+      const { id, role } = req.params;
+      const project = await ComplianceProject.findById(id);
+      if (!project) {
+        res.status(404).json({ success: false, message: 'Compliance project not found.' });
+        return;
+      }
+
+      const normalizedRole = role.toLowerCase();
+      let roleLabel = '';
+      if (normalizedRole === 'qsa') {
+        project.qsaId = null as any;
+        project.legacyQsaId = undefined;
+        roleLabel = 'Qualified Security Assessor (QSA)';
+      } else if (normalizedRole === 'qa') {
+        project.qaId = null as any;
+        project.legacyQaId = undefined;
+        roleLabel = 'Quality Assurance (QA)';
+      } else if (normalizedRole === 'consultant') {
+        project.consultantId = null as any;
+        project.legacyConsultantId = undefined;
+        roleLabel = 'Compliance Consultant';
+      } else {
+        res.status(400).json({ success: false, message: 'Invalid role specified. Use qsa, qa, or consultant.' });
+        return;
+      }
+
+      await project.save();
+
+      const updatedProject = await ComplianceProject.findById(id)
+        .populate('customerId', 'fullName companyName email')
+        .populate('processId', 'processName')
+        .populate('qsaId', 'fullName email')
+        .populate('qaId', 'fullName email')
+        .populate('consultantId', 'fullName email');
+
+      res.status(200).json({
+        success: true,
+        message: `${roleLabel} removed from project successfully.`,
+        project: updatedProject,
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: formatErrorMessage(error) });
+    }
+  }
+
   public async getTestingProjects(req: Request, res: Response): Promise<void> {
     try {
       const { testingId } = req.query;
@@ -775,6 +984,96 @@ export class AdminController {
       })();
 
       res.status(201).json({ success: true, message: 'Testing project assigned successfully.', project: newProject });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: formatErrorMessage(error) });
+    }
+  }
+
+  public async reassignTestingProject(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { qsaId, qaId, consultantId, startDate, endDate } = req.body;
+
+      const project = await TestingProject.findById(id);
+      if (!project) {
+        res.status(404).json({ success: false, message: 'Testing project not found.' });
+        return;
+      }
+
+      if (qsaId !== undefined) {
+        if (!qsaId || qsaId === 'unassigned' || qsaId === 'none') {
+          project.qsaId = null as any;
+          project.legacyQsaId = undefined;
+        } else {
+          const qsaUser = await User.findById(qsaId);
+          if (!qsaUser || qsaUser.status === UserStatus.DELETE) {
+            res.status(400).json({ success: false, message: 'Selected assessor does not exist or has been deleted.' });
+            return;
+          }
+          if (qsaUser.userType !== UserType.QSA) {
+            res.status(400).json({ success: false, message: 'Selected user is not a Qualified Security Assessor (QSA).' });
+            return;
+          }
+          project.qsaId = qsaUser._id;
+          project.legacyQsaId = qsaUser.legacyId;
+        }
+      }
+
+      if (qaId !== undefined) {
+        if (!qaId || qaId === 'unassigned' || qaId === 'none') {
+          project.qaId = null as any;
+          project.legacyQaId = undefined;
+        } else {
+          const qaUser = await User.findById(qaId);
+          if (!qaUser || qaUser.status === UserStatus.DELETE) {
+            res.status(400).json({ success: false, message: 'Selected QA auditor does not exist or has been deleted.' });
+            return;
+          }
+          if (qaUser.userType !== UserType.QA) {
+            res.status(400).json({ success: false, message: 'Selected user is not a Quality Assurance (QA) auditor.' });
+            return;
+          }
+          project.qaId = qaUser._id;
+          project.legacyQaId = qaUser.legacyId;
+        }
+      }
+
+      if (consultantId !== undefined) {
+        if (!consultantId || consultantId === 'unassigned' || consultantId === 'none') {
+          project.consultantId = null as any;
+          project.legacyConsultantId = undefined;
+        } else {
+          const consUser = await User.findById(consultantId);
+          if (!consUser || consUser.status === UserStatus.DELETE) {
+            res.status(400).json({ success: false, message: 'Selected consultant does not exist or has been deleted.' });
+            return;
+          }
+          if (consUser.userType !== UserType.CONSULTANT) {
+            res.status(400).json({ success: false, message: 'Selected user is not a Compliance Consultant.' });
+            return;
+          }
+          project.consultantId = consUser._id;
+          project.legacyConsultantId = consUser.legacyId;
+        }
+      }
+
+      if (startDate !== undefined) project.startDate = startDate;
+      if (endDate !== undefined) project.endDate = endDate;
+
+      await project.save();
+
+      const updatedProject = await TestingProject.findById(id)
+        .populate('customerId', 'fullName companyName email')
+        .populate('processId', 'processName')
+        .populate('qsaId', 'fullName email')
+        .populate('qaId', 'fullName email')
+        .populate('consultantId', 'fullName email');
+
+      res.status(200).json({
+        success: true,
+        message: 'Testing project assignees updated successfully.',
+        project: updatedProject,
+      });
     } catch (error: any) {
       res.status(500).json({ success: false, message: formatErrorMessage(error) });
     }

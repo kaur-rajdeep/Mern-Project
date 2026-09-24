@@ -105,7 +105,7 @@ async function runTestSuite() {
   await recordTest('AUTH-01', 'Auth & RBAC', 'Super Admin Login', 'Critical', async () => {
     const res = await api('/auth/login', {
       method: 'POST',
-      body: { email: 'panacea@yopmail.com', password: 'guru@1234' }
+      body: { email: 'panacea@endtest-mail.io', password: 'guru@1234' }
     });
     if (!res.ok || !res.data.token || res.data.user?.userType !== 1) {
       throw new Error(`Admin login failed: ${JSON.stringify(res.data)}`);
@@ -139,7 +139,7 @@ async function runTestSuite() {
   await recordTest('AUTH-03', 'Auth & RBAC', 'QSA Assessor Login', 'Critical', async () => {
     const res = await api('/auth/login', {
       method: 'POST',
-      body: { email: 'qsa@yopmail.com', password: '123456' }
+      body: { email: 'qsa@endtest-mail.io', password: 'Password@123' }
     });
     if (!res.ok || !res.data.token || res.data.user?.userType !== 2) {
       throw new Error(`QSA login failed: ${JSON.stringify(res.data)}`);
@@ -151,7 +151,7 @@ async function runTestSuite() {
   await recordTest('AUTH-04', 'Auth & RBAC', 'QA Auditor Login', 'Critical', async () => {
     const res = await api('/auth/login', {
       method: 'POST',
-      body: { email: 'qa@yopmail.com', password: '123456' }
+      body: { email: 'qa@endtest-mail.io', password: 'Password@123' }
     });
     if (!res.ok || !res.data.token || res.data.user?.userType !== 3) {
       throw new Error(`QA login failed: ${JSON.stringify(res.data)}`);
@@ -182,7 +182,7 @@ async function runTestSuite() {
   await recordTest('AUTH-06', 'Auth & RBAC', 'Invalid Credentials', 'High', async () => {
     const res = await api('/auth/login', {
       method: 'POST',
-      body: { email: 'panacea@yopmail.com', password: 'WrongPassword999!' }
+      body: { email: 'panacea@endtest-mail.io', password: 'WrongPassword999!' }
     });
     if (res.status !== 401 && res.status !== 400 && res.status !== 404) {
       throw new Error(`Expected 401/400 but got ${res.status}`);
@@ -233,7 +233,7 @@ async function runTestSuite() {
   // -------------------------------------------------------------
   console.log('\n📋 MODULE 2: Customer & Process Scope Management');
 
-  const testCustomerEmail = `testcust_${Date.now()}@panaceatest.com`;
+  const testCustomerEmail = `testcust_${Date.now()}@endtest-mail.io`;
 
   await recordTest('CUST-01', 'Customer Scope', 'Create New Customer Organization', 'Critical', async () => {
     const res = await api('/admin/customers', {
@@ -357,7 +357,7 @@ async function runTestSuite() {
         companyNumber: 'DEL-001',
         address: '123 Del St',
         fullName: 'Del POC',
-        email: `tempdel_${Date.now()}@panacea.com`,
+        email: `tempdel_${Date.now()}@endtest-mail.io`,
         phoneNumber: '1112223333',
         password: 'Password@123'
       }
@@ -381,9 +381,9 @@ async function runTestSuite() {
   // -------------------------------------------------------------
   console.log('\n📋 MODULE 3: Security Assessors & Project Assignment Guard');
 
-  const testQsaEmail = `qsa_test_${Date.now()}@panacea.com`;
-  const testQaEmail = `qa_test_${Date.now()}@panacea.com`;
-  const testConsEmail = `cons_test_${Date.now()}@panacea.com`;
+  const testQsaEmail = `qsa_test_${Date.now()}@endtest-mail.io`;
+  const testQaEmail = `qa_test_${Date.now()}@endtest-mail.io`;
+  const testConsEmail = `cons_test_${Date.now()}@endtest-mail.io`;
 
   await recordTest('ASSR-01', 'Assessors & Guard', 'Create QSA Assessor', 'Critical', async () => {
     const res = await api('/admin/assessors', {

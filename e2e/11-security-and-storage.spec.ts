@@ -31,7 +31,7 @@ test.describe('Module 11: Security Hardening & Edge Case Validations', () => {
 
   test('SEC-009: Forgot Password Anti-Enumeration Message', async ({ request }) => {
     const res = await request.post(`${API_BASE}/auth/forgot-password`, {
-      data: { email: 'completely.unknown.fake.account@panaceatest.com' },
+      data: { email: 'completely.unknown.fake.account@endtest-mail.io' },
     });
 
     expect(res.status()).toBe(200);
@@ -49,7 +49,7 @@ test.describe('Module 11: Security Hardening & Edge Case Validations', () => {
     // Trigger forgot password rate limit (5 req / 15m)
     for (let i = 0; i < 7; i++) {
       const res = await directRequest.post(`${API_BASE}/auth/forgot-password`, {
-        data: { email: `ratelimit_probe_${i}@panaceatest.com` },
+        data: { email: `ratelimit_probe_${i}@endtest-mail.io` },
       });
 
       if (res.status() === 429) {

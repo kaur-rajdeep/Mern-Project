@@ -53,6 +53,8 @@ router.get('/compliance-services', adminController.getComplianceServices);
 router.get('/testing-services', adminController.getTestingServices);
 router.get('/compliance-projects', adminController.getComplianceProjects);
 router.post('/compliance-projects', adminController.createComplianceProject);
+router.put('/compliance-projects/:id/reassign', adminController.reassignComplianceProject);
+router.delete('/compliance-projects/:id/assignees/:role', adminController.removeProjectAssignee);
 router.get('/compliance-projects/:id/details', adminController.getComplianceProjectDetails);
 router.post('/compliance-projects/:id/bulk-status', adminController.bulkUpdateComplianceReviewStatus);
 router.post('/compliance-projects/:id/qa-modification', adminController.handleQaModification);
@@ -64,6 +66,7 @@ router.delete('/compliance-projects/:id/reports/:reportId', adminController.dele
 
 router.get('/testing-projects', adminController.getTestingProjects);
 router.post('/testing-projects', adminController.createTestingProject);
+router.put('/testing-projects/:id/reassign', adminController.reassignTestingProject);
 
 // Questionnaires
 router.get('/questionnaires', adminController.getQuestionnaires);
