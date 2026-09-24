@@ -197,14 +197,13 @@ export class ComplianceExportController {
         { key: 'refNo', width: 14 },
         { key: 'question', width: 55 },
         { key: 'status', width: 20 },
-        { key: 'evidenceFiles', width: 38 },
-        { key: 'uploadDate', width: 22 },
-        { key: 'checksum', width: 24 },
-        { key: 'comments', width: 45 },
+        { key: 'evidenceFiles', width: 40 },
+        { key: 'uploadDate', width: 24 },
+        { key: 'comments', width: 50 },
       ];
 
       // Title & Branding Banner
-      worksheet.mergeCells('A1:G1');
+      worksheet.mergeCells('A1:F1');
       const titleCell = worksheet.getCell('A1');
       titleCell.value = 'PANACEA INFOSEC — AUDIT EVIDENCE & TRACEABILITY MATRIX';
       titleCell.font = { name: 'Calibri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -213,7 +212,7 @@ export class ComplianceExportController {
       worksheet.getRow(1).height = 35;
 
       // Sub-header Metadata
-      worksheet.mergeCells('A2:G2');
+      worksheet.mergeCells('A2:F2');
       const subCell = worksheet.getCell('A2');
       subCell.value = `Process: ${process.processName} | Framework: ${serviceName} | Customer: ${customer?.companyName || customer?.fullName || 'N/A'}`;
       subCell.font = { name: 'Calibri', size: 11, italic: true, color: { argb: 'FFE2E8F0' } };
@@ -283,7 +282,6 @@ export class ComplianceExportController {
         'Audit Status',
         'Uploaded Evidence Files',
         'Upload Date & Time',
-        'SHA-256 Checksum',
         'Assessor / Auditor Comments',
       ];
 
@@ -332,7 +330,6 @@ export class ComplianceExportController {
 
         const fileNames = docs.map((d) => d.originalFilename || d.docs).join('\n') || '— None —';
         const uploadDates = docs.map((d) => new Date(d.createdAt).toLocaleString()).join('\n') || '—';
-        const checksums = docs.map((d) => d.sha256Checksum ? d.sha256Checksum.substring(0, 16) + '...' : '—').join('\n') || '—';
         const comment = rev?.notes || rev?.comments || 'No assessor remarks logged.';
 
         const row = worksheet.getRow(currentRowIdx);
@@ -341,8 +338,7 @@ export class ComplianceExportController {
         row.getCell(3).value = statusText;
         row.getCell(4).value = fileNames;
         row.getCell(5).value = uploadDates;
-        row.getCell(6).value = checksums;
-        row.getCell(7).value = comment;
+        row.getCell(6).value = comment;
 
         // Alignment & Wrapping
         row.getCell(1).alignment = { vertical: 'top', horizontal: 'center' };
@@ -351,7 +347,6 @@ export class ComplianceExportController {
         row.getCell(4).alignment = { vertical: 'top', wrapText: true };
         row.getCell(5).alignment = { vertical: 'top', wrapText: true };
         row.getCell(6).alignment = { vertical: 'top', wrapText: true };
-        row.getCell(7).alignment = { vertical: 'top', wrapText: true };
 
         // Status Badge Style
         row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: statusBg } };
@@ -359,13 +354,13 @@ export class ComplianceExportController {
 
         // Zebra striping for readability
         if (idx % 2 === 1) {
-          [1, 2, 4, 5, 6, 7].forEach((col) => {
+          [1, 2, 4, 5, 6].forEach((col) => {
             row.getCell(col).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
           });
         }
 
         // Cell borders
-        for (let c = 1; c <= 7; c++) {
+        for (let c = 1; c <= 6; c++) {
           row.getCell(c).border = {
             bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
             right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
